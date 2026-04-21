@@ -1,0 +1,250 @@
+========================================================================
+             AI RESEARCH AGENT: INTERVIEW PREPARATION GUIDE
+========================================================================
+
+1. ARCHITECTURE & SYSTEM DESIGN
+------------------------------------------------------------------------
+Q: Can you explain the high-level architecture of your AI Researcher project?
+A: 
+The project is built around a Multi-Agent "Assembly Line" architecture using LangGraph. It is a strictly sequential handoff system.
+- Node 1 (The Researcher): An LLM bound to research tools (DuckDuckGo, arXiv, PDF Parsers). Its job is to hunt for facts, extract data, and produce a plaintext "research_summary".
+- The Handoff: Once the Researcher hits its terminal condition ("RESEARCH COMPLETE"), LangGraph automatically routes the state to the Writer agent.
+- Node 2 (The Writer): An LLM securely restricted to one tool: a LaTeX compiler. It reads the research summary and generates perfectly formatted LaTeX code, rendering it directly to a PDF.
+
+Q: Why did you choose a Multi-Agent Sequential Handoff pattern over a Single-Agent (ReAct) or Supervisor pattern?
+A: 
+Initially, it was a Single-Agent ReAct system, but I ran into severe "Memory Pollution". The agent had to remember how to search the web AND how to dynamically format LaTeX. If the LaTeX compilation failed (e.g., missing a bracket `}`), the agent would get stuck in a debugging loop, which wasted thousands of tokens re-reading old web search results! 
+By splitting it into a Sequential Assembly Line, the Writer starts with fresh context focusing solely on typesetting, drastically improving reliability, lowering token usage, and completely eliminating role-confusion.
+
+Q: Describe your AgentState design. How do the agents communicate?
+A: 
+I used a `TypedDict` in LangGraph for my state. It contains:
+1. `messages`: Managed by the `add_messages` reducer to accumulate the conversation history.
+2. `research_summary`: A string payload representing the "handoff package."
+3. `current_agent`: A string to track topology (whether the graph is currently in the Researcher phase or Writer phase).
+
+Q: What is a LangGraph "edge" vs a "conditional edge"? Where do you use each?
+A:
+A regular edge (add_edge) is a deterministic, always-on connection between two nodes — for example, after researcher_tools runs, control ALWAYS returns to the researcher node. A conditional edge (add_conditional_edges) is a dynamic routing function that inspects the current state and returns the name of the NEXT node to visit. In my graph, _should_continue_researcher checks whether the last LLM message contains tool_calls; if yes it routes to researcher_tools, otherwise it routes to writer. This is what creates the ReAct loop for the researcher and the termination logic for the writer.
+
+Q: Why did you use MemorySaver as the checkpointer and what does it actually do?
+A:
+MemorySaver is LangGraph's in-memory checkpoint backend. After every node execution it serialises the entire AgentState (including the full messages list) into a dictionary keyed by thread_id. This means if I call graph.invoke() twice on the same thread_id the second call resumes exactly where the first left off — enabling multi-turn conversations without losing context. In production you would swap MemorySaver for a persistent backend like SqliteSaver or PostgresSaver, but for a desktop research tool in-memory is perfectly sufficient.
+
+Q: If we deploy this to GCP in production, what specific GCP service would you use as the persistent checkpointer?
+A:
+The industry standard approach on GCP would be to use Cloud SQL for PostgreSQL combined with LangGraph's native `PostgresSaver` (from the `langgraph-checkpoint-postgres` package). PostgreSQL is ideal because LangGraph checkpoints store arbitrary state as JSON, and Postgres handles `JSONB` data types extremely efficiently. 
+
+Alternatively, if you are building an entirely serverless, scale-to-zero application (e.g., using Cloud Run), you could write a custom checkpointer using Google Cloud Firestore (a NoSQL document database). Firestore is a natural fit for storing nested state dictionaries keyed by `thread_id` and requires zero database administration, though `PostgresSaver` offers a more "out-of-the-box" supported solution.
+
+Q: Why is the system message injected fresh on every node call instead of being stored in state?
+A:
+I call load_prompt() inside each node function (_call_researcher and _call_writer) and prepend a fresh SystemMessage before invoking the LLM. The state only stores human/AI/tool messages via the add_messages reducer. If I stored the system prompt in the state it would get duplicated on every turn and inflate the context window. The _filter_system_messages() helper strips any stray system messages that leaked into the history before prepending the clean one, keeping the context tight.
+
+2. TOOLING & RAG (Retrieval-Augmented Generation)
+------------------------------------------------------------------------
+Q: How does the PDF reading tool work? How do you prevent context window exhaustion?
+A: 
+I implemented an ephemeral RAG architecture using ChromaDB. When the agent uses `read_pdf`, the system fetches the PDF, chunks its text using PyPDF2, and embeds it into an in-memory Chroma Vector Database. The agent is strictly commanded NOT to read the whole PDF at once. Instead, it must subsequently use the `query_pdf` tool to semantically search the vector store for concise, highly relevant excerpts.
+
+Q: Walk me through the exact steps when an agent calls read_pdf on an arXiv paper URL.
+A:
+1. requests.get() downloads the raw PDF bytes with a configurable timeout (pdf_request_timeout from config).
+2. PyPDF2.PdfReader extracts text page-by-page and joins them into a single string.
+3. An MD5 hash of the URL is computed as a doc_id to allow deduplication later.
+4. RecursiveCharacterTextSplitter splits the text into 1000-character chunks with 200-character overlap, preserving sentence boundaries.
+5. Each chunk is wrapped in a LangChain Document with metadata {source: url, doc_id: hash}.
+6. get_vector_store() returns (or lazily initialises) the singleton ChromaDB using the all-MiniLM-L6-v2 HuggingFace embedding model.
+7. The chunks are added to the "research_papers" collection.
+8. The tool returns a success string that instructs the agent to now use query_pdf, which enforces the two-step RAG protocol.
+
+Q: Why did you choose the all-MiniLM-L6-v2 embedding model instead of OpenAI embeddings?
+A:
+all-MiniLM-L6-v2 runs locally via HuggingFace — it produces 384-dimension dense vectors and is extremely fast on CPU. Using a local embedder means zero additional API cost and zero network latency during ingestion. For a research agent where the same paper might be queried many times in one session, this is a significant saving. The quality trade-off vs OpenAI's text-embedding-3-small is minimal for scientific text retrieval tasks.
+
+Q: How do you handle errors if a tool fails?
+A: 
+LangGraph's `ToolNode` wraps exceptions. For instance, the LaTeX tool (`latex_renderer.py`) securely executes the `tectonic` engine in an isolated subprocess. If the compilation fails due to a syntax error, a `LatexRenderError` is raised. Instead of crashing the application, the error (stderr output) is piped directly back to the Writer Agent as a `ToolMessage`. The Writer reads its own mistake and self-corrects the code in a loop until it compiles perfectly.
+
+Q: Explain your custom exception hierarchy. Why not just use generic Python exceptions?
+A:
+I created a base AIResearcherError, then ToolError beneath it, with specific leaf classes: ArxivSearchError, PDFReadError, LatexRenderError, and WebSearchError. Each carries domain-specific context (e.g. ArxivSearchError stores the query string, LatexRenderError stores the .tex file path). This design lets me write a single except AIResearcherError clause at the top level to catch any application failure gracefully, while still logging rich context at the leaf level. It also makes unit testing very precise — a test can assert raises(LatexRenderError) rather than just raises(Exception).
+
+Q: The arXiv tool directly calls the arXiv Atom XML API. Why not use a pre-built LangChain arXiv tool?
+A:
+The LangChain community arXiv tool is convenient but returns unstructured free text that the LLM then has to parse. I built a custom implementation that parses the Atom XML with xml.etree.ElementTree and returns a Pydantic-validated SearchResult / ArxivPaper model_dump(). This gives the LLM structured JSON with explicit fields (title, authors, categories, pdf link), reducing hallucination risk. I also control the sort order (submittedDate descending) so the agent always sees the most recent papers first.
+
+Q: How does the pubmed_search tool differ from arxiv_search in its API approach?
+A:
+PubMed uses NCBI's Entrez API which is a two-step process: first an esearch call to get a list of PMIDs (PubMed IDs), then an efetch call to retrieve the full article XML for those IDs. I parse the XML to extract title, abstract, journal, authors, and construct a direct pubmed.ncbi.nlm.nih.gov URL from the PMID. arXiv is a single-step Atom feed query. The agent is prompted to use pubmed_search exclusively for biomedical topics because PubMed is peer-reviewed and authoritative for that domain.
+
+Q: Why is the Writer agent only given one tool — render_latex_pdf — instead of also having web access?
+A:
+Tool segregation is the core principle of the assembly line. Giving the Writer web access would reintroduce memory pollution — it might try to "verify facts" by searching again and hallucinate new claims on top of the Researcher's already-vetted summary. By restricting it to render_latex_pdf only, the Writer's sole job is typesetting. It can only succeed (compile to PDF) or fail (receive a LatexRenderError and self-correct). This deterministic constraint radically improves reliability and produces consistent outputs.
+
+3. PROMPT ENGINEERING & LLM CONTROL
+------------------------------------------------------------------------
+Q: Did you face hallucination issues or "tool-spamming" where the LLM called too many tools simultaneously? How did you fix it?
+A: 
+Yes, because Groq models (Llama 3 70B) process instructions highly literally, telling the agent to "search for information" caused it to fire 5 tools at once in parallel (e.g., arXiv, DuckDuckGo, and Semantic Scholar simultaneously). 
+I fixed this through rigorous structural prompting. I updated `prompts/researcher.txt` with explicit rules: "DO NOT SPAM TOOLS. You MUST use ONE tool at a time sequentially. Wait for results before deciding." I also explicitly tied domains (e.g. "Biology -> pubmed_search", "AI -> arxiv_search") to restrict its decision boundaries.
+
+Q: How did you fix the issue where the LLM was generating markdown tags instead of raw code?
+A: 
+The LaTeX compiler crashed because the LLM wrapped its code in ```latex ``` markdown blocks. The compiler received this literally and threw an "Undefined control sequence" error on Line 1. I solved this by adding strict negative constraints to `prompts/writer.txt`: "DO NOT wrap your LaTeX in markdown codeblocks. The VERY FIRST character must be \documentclass". 
+
+Q: How do you load system prompts? Why not hardcode them as Python strings?
+A:
+I load prompts from .txt files in a /prompts directory via a load_prompt("researcher") helper in agent/prompts.py. Keeping prompts in text files rather than Python strings has several advantages: a non-developer can tune phrasing without touching code, diffs are cleaner in version control, and you can A/B test prompt versions by swapping files without redeploying. The prompts are loaded at node-call time (not at import time), so a running application can hot-reload a prompt change without restart.
+
+Q: What is the "RESEARCH COMPLETE" signal and why do you use natural language instead of a structured flag?
+A:
+When the Researcher decides it has gathered sufficient information, it is instructed to write "RESEARCH COMPLETE" as part of its final plain-text message and then stop calling tools. The conditional edge _should_continue_researcher only checks whether tool_calls exist on the last message — if there are none, it routes to the Writer regardless of whether the phrase appears. The phrase is a human-readable convention to signal intent, but the actual graph routing is driven purely by the presence or absence of tool_calls in the LangChain AIMessage object. This is more robust than checking text content.
+
+Q: What temperature do you use and why? How does it affect research quality?
+A:
+I default to temperature=0.7, configurable via the model_temperature setting in config.py with validation enforcing the range 0.0–2.0. For the Researcher, a moderate temperature (0.5–0.7) produces slightly varied search queries which increases the chance of finding the right papers. For the Writer, ideally a lower temperature (0.2–0.3) would be better for deterministic LaTeX output — this is a potential future improvement: separate temperature settings per agent, since both currently share the same base_model configuration.
+
+4. TESTING & EVALUATION
+------------------------------------------------------------------------
+Q: How do you test a non-deterministic GenAI application?
+A: 
+Instead of testing the dynamic text generation, I verified the graph topology and routing using End-to-End integration tests (`test_agent_e2e.py`).
+I created a fixture (`conftest_e2e.py`) to inject mock LLMs (`unittest.mock.MagicMock`) containing hardcoded `AIMessage` paths. 
+By defining sequences of mock responses (e.g., Tool Call -> Plain Text -> Plain Text), I could assert that the graph correctly routed out of `_should_continue_researcher` and smoothly handed control into the Writer layer without hitting endless loops. It allows me to test the LangGraph infrastructure completely offline.
+
+Q: Explain the build_e2e_graph fixture. How does it inject a mock LLM into a real LangGraph graph?
+A:
+The conftest_e2e.py fixture creates a MagicMock LLM whose .invoke() method is scripted to return a pre-defined list of AIMessage objects sequentially (using side_effect). The fixture then calls build_graph() but intercepts the _create_models step by patching it to return the mock LLMs. The real StateGraph, ToolNode, MemorySaver, and conditional edges are all genuine LangGraph components — only the model is replaced. This means I am testing actual graph topology and routing decisions, not the LLM's text generation. The mock just controls WHICH path through the graph is exercised.
+
+Q: How did you test the ChromaDB ingestion in TestPdfIngestion without doing a real PDF download?
+A:
+I used a two-layer mock: (1) I patched requests.get to return a MagicMock whose .content attribute holds fake PDF bytes (b"%PDF-fake"), and (2) I patched PyPDF2.PdfReader to return a mock object with fake .pages returning pre-written sentences. This means the text chunking, Document creation, MD5 hashing, and ChromaDB upsert all run against real code. After the graph.invoke() call I query the ephemeral_chroma fixture (an isolated in-memory Chroma instance) with similarity_search and assert that chunks landed in the database, proving the full ingestion pipeline worked correctly.
+
+Q: What is the purpose of the @pytest.mark.e2e marker?
+A:
+It separates slow, infrastructure-heavy E2E tests from fast unit tests. In CI/CD you can run pytest -m "not e2e" in the PR validation pipeline (fast feedback, seconds) and pytest -m e2e separately as a nightly regression suite. The marker is declared in pyproject.toml under [tool.pytest.ini_options] so pytest recognises it. This prevents developers from accidentally running long integration tests on every commit while still providing full coverage in scheduled pipelines.
+
+Q: How do you test tool order in a multi-step chain (e.g. arxiv_search then read_pdf)?
+A:
+In TestMultiStepChain, after invoking the graph I extract a flat list of all tool_calls from every AIMessage in the result. I then use list.index() to find the position of "arxiv_search" and "read_pdf" in that list and assert that the arXiv index is strictly less than the PDF index. This verifies not just that both tools were called, but that the sequential ordering of the assembly line was preserved.
+
+Q: Beyond unit tests, how do you evaluate the actual quality of the LLM's research output?
+A:
+The project implements a comprehensive "LLM-as-a-Judge" automated grading pipeline (`eval_llm_judge.py`). It feeds the agent's final plain-text research summary to a separate, strict evaluator LLM (like `gemini-2.0-flash` or `llama-3.3-70b-versatile`) which scores the output from 1 to 5 across 5 dimensions: Accuracy, Completeness, Coherence, Citation Quality, and Depth. This runs across a JSON dataset of test cases, averages the score, and saves deterministic `.json` reports, allowing me to quantitatively measure whether a prompt tweak improved or degraded the output.
+
+Q: How do you track and evaluate the efficiency of the Multi-Agent's tool usage?
+A:
+I built an Agent Trajectory Evaluator (`eval_trajectory.py`) that executes multi-step tasks and tracks the exact sequence of tools the agent calls. It compares the actual trajectory against an "optimal_trajectory" defined in `trajectory_cases.json`. It computes an "Efficiency Score" by heavily penalizing wasted tool calls (hallucinated tools), tool execution errors, and unnecessary steps, while rewarding exact tool overlaps and rapid task completion. It also analyzes whether the agent successfully recovered from errors.
+
+Q: Do you use any external observability tools for evaluation datasets?
+A:
+Yes, the project integrates deeply with LangSmith via datasets (`langsmith_evaluate.py`). The evaluation scripts upload baseline JSON datasets (like tool selection or RAG test cases) to LangSmith. Using the `langsmith.evaluate()` API with Custom Evaluators, the agent executes tasks locally, and the results, token counts, latency, and correctness scores are synced directly to the LangSmith dashboard. This allows for side-by-side A/B testing of experiments (e.g., "v1-prompt" vs "v2-decision-tree-prompt").
+
+5. PERFORMANCE & SCALABILITY
+------------------------------------------------------------------------
+Q: You hit a Rate Limit (429) during development. How does your app configuration manage models?
+A: 
+My configuration is managed with `pydantic-settings` (`config.py`). Because I separated my secrets (`.env`) from my logical defaults, when the Llama 70B model hit its daily 100k token limits on the free Groq tier, it was trivial to toggle `model_name` down to `llama-3.1-8b-instant`. The underlying code interacts with LangChain's standard `ChatGroq` abstraction, making it completely model-agnostic.
+
+Q: How does get_settings() prevent the Settings object from being re-created on every call?
+A:
+I decorated get_settings() with Python's functools.lru_cache(maxsize=1). The first call instantiates a Settings object (which triggers Pydantic validation and .env file parsing), caches it, and every subsequent call returns the same in-memory singleton. This avoids repeated disk I/O and re-validation on every tool invocation, which would add measurable latency in a tight inference loop.
+
+Q: The vector store (get_vector_store) also uses a singleton pattern. How is that implemented?
+A:
+In db.py, two module-level variables _VECTOR_STORE and _EMBEDDINGS are initialised to None. The get_vector_store() function checks if _VECTOR_STORE is None and only then loads the HuggingFace embedding model (which takes ~5 seconds on first run) and creates the Chroma client. All subsequent calls to any tool that needs the vector store get the hot, already-initialised instance. This lazy singleton pattern is thread-safe enough for a single-process desktop agent and eliminates the multi-second embedding model loading from the hot path.
+
+Q: How do you handle YouTube transcripts that are extremely long?
+A:
+The youtube_transcript_reader tool joins all transcript segments into a single string, then checks its length. If it exceeds 30,000 characters (roughly the safe token budget at Groq's 12k TPM limit), it truncates to 30,000 chars and appends a [TRANSCRIPT TRUNCATED FOR LENGTH] notice. This prevents context window overflow while still giving the agent a meaningful portion of the video to summarise. A more sophisticated approach would chunk and embed the transcript into ChromaDB just like PDFs — that is a planned enhancement.
+
+6. DEPLOYMENT & DevOps
+------------------------------------------------------------------------
+Q: How is the project containerised? Walk me through the Dockerfile.
+A:
+The Dockerfile uses python:3.11-slim as the base. It then installs system dependencies required by the Tectonic LaTeX engine (libfontconfig1, libharfbuzz0b, etc.) via apt-get. Tectonic itself is installed from its official shell installer and moved to /usr/local/bin. The package manager uv is installed, the pyproject.toml is copied in, and uv pip install --system -e . installs the project in editable mode. Application source is copied last (maximising Docker layer caching). Port 8501 is exposed for Streamlit, and the default CMD launches the UI mode. The ENTRYPOINT is the ai-researcher CLI entry point defined in pyproject.toml.
+
+Q: Why use uv instead of pip for dependency management?
+A:
+uv is a Rust-based Python package manager that is 10-80x faster than pip for dependency resolution and installation. In a Docker build this means significantly faster CI/CD image builds. uv also generates a deterministic uv.lock file (like pip-tools requirements.txt or poetry.lock) that pins every transitive dependency, ensuring the exact same environment on every machine. It supports editable installs (-e .) and PEP 621 pyproject.toml natively.
+
+Q: The app has both a CLI and a Streamlit UI. How is that structured?
+A:
+Both entry points share the same build_graph() factory from agent/graph.py. The CLI (cli.py) uses argparse with a --mode flag: "cli" reads from stdin in a loop and prints responses, while "ui" launches the Streamlit application from the ui/ module. The ai-researcher console script is registered in pyproject.toml under [project.scripts] so after installation it is available on PATH. Docker defaults to ui mode via CMD ["--mode", "ui"].
+
+Q: How does LangSmith observability work in your project?
+A:
+LangSmith integration is configured via environment variables in config.py. When langsmith_tracing_v2 is set to "true" in the .env file, get_settings() pushes LANGSMITH_TRACING_V2, LANGSMITH_API_KEY, and LANGSMITH_PROJECT into os.environ. LangChain's SDK auto-detects these variables and automatically traces every LLM call, tool invocation, and graph node traversal to the LangSmith dashboard — no code instrumentation required. This gives a full execution trace showing token counts, latencies, and the exact messages passed between nodes.
+
+Q: What logging strategy does the project use?
+A:
+The project uses Python's built-in logging with a structured dictConfig layout defined in logging.py. Two handlers are configured: a console handler (StreamHandler at INFO level with a concise format) and a rotating file handler (RotatingFileHandler at DEBUG level with a detailed format including filename, line number, and function name). Log files are written to a /logs directory, rotate at 5MB, and keep 3 backups. Every module gets a logger via get_logger(__name__) which ensures logs are namespaced under "ai_researcher.*" and won't interfere with third-party library logs.
+
+7. LANGGRAPH & LANGCHAIN CONCEPTS (CONCEPTUAL)
+------------------------------------------------------------------------
+Q: What is LangGraph and how does it differ from a basic LangChain LCEL chain?
+A:
+An LCEL chain is a linear, stateless pipeline: input flows through a sequence of runnables and produces an output. LangGraph is a stateful graph framework built on top of LangChain where nodes are functions that read and write a shared state object, and edges define conditional routing between them. LangGraph supports cycles (loops), branching, and checkpointing — essential for agentic systems where the agent must decide dynamically how many tool calls to make.
+
+Q: What is a ToolNode and why use it instead of calling tools manually?
+A:
+ToolNode is a prebuilt LangGraph component that takes a list of tool functions, intercepts an AIMessage that contains tool_calls, automatically dispatches each call to the right function, and packages the results as ToolMessage objects back into the state. Without ToolNode I would have to write a manual dispatcher: inspect tool_calls, find the matching function, call it, catch exceptions, format the response. ToolNode handles all of this including error propagation as ToolMessages, so the LLM can see and self-correct from failures.
+
+Q: What does bind_tools() do when you call base_model.bind_tools(researcher_tools)?
+A:
+bind_tools() serialises each tool's Python function signature and docstring into a JSON Schema and attaches it to the LLM API request as the tools parameter. When the model receives a prompt, it can respond with a structured tool_calls JSON object (conforming to the schema) instead of plain text. LangChain then parses this structured response into an AIMessage with a tool_calls attribute, which the graph uses for routing. The key point is that bind_tools is how the LLM "knows" what capabilities it has.
+
+Q: Explain the add_messages reducer. What problem does it solve?
+A:
+In a LangGraph TypedDict state, if two nodes both write to the same key, the second write would normally overwrite the first. add_messages is a special reducer (Annotated[list, add_messages]) that instead APPENDS new messages rather than replacing them. This means every node simply returns {"messages": [its_new_message]} and LangGraph automatically accumulates the full conversation history. It also handles deduplication by message ID, preventing the same message from appearing twice if a checkpoint is restored.
+
+Q: What is the difference between the Researcher and Writer models in your graph, even though they use the same base ChatGroq model?
+A:
+Both use the same underlying ChatGroq(model=settings.model_name) instance, but they are bound to different tool sets: researcher_model = base_model.bind_tools(researcher_tools) and writer_model = base_model.bind_tools(writer_tools). Because bind_tools attaches a different JSON schema to each, the two "models" present entirely different capabilities to the LLM. The Researcher sees 6+ research tools; the Writer sees only render_latex_pdf. This is pure configuration — no fine-tuning required — which keeps the architecture lightweight and easily extensible.
+
+8. BEHAVIOURAL / HR QUESTIONS
+------------------------------------------------------------------------
+Q: What was the hardest technical challenge you faced building this project?
+A:
+The hardest part was the LaTeX self-correction loop. When the Writer agent generated invalid LaTeX code, the compiler threw massive, messy error logs. Passing all that raw error text back to the LLM confused it, leading to infinite retry loops.
+
+I fixed this by cleaning up the "noise":
+1. I captured the errors properly from the subprocess.
+2. I threw a custom `LatexRenderError` to format the error text neatly. 
+3. I updated the system prompt to tell the agent to only look at the first line of the error to figure out what went wrong.
+
+Q: How would you scale this project for multiple concurrent users?
+A:
+Several changes would be required:
+1. Replace MemorySaver with a persistent PostgreSQL or Redis checkpoint backend so conversation state survives server restarts.
+2. Replace the singleton ChromaDB instance (a module-level global) with per-session ephemeral collections keyed by user/session ID to prevent data leakage between users.
+3. Move heavy tool calls (PDF ingestion, LaTeX compilation) to a background task queue (e.g. Celery or FastAPI BackgroundTasks) to avoid blocking the request thread.
+4. Containerise behind a load balancer using Docker Compose or Kubernetes, with horizontal scaling for the API layer.
+5. Add rate-limiting middleware to handle API quota management across users.
+
+Q: If you were to add a third agent to this pipeline, what would it be and how would you wire it?
+A:
+I would add a Fact-Checker agent between the Researcher and the Writer. Its job would be to cross-reference the research_summary against an authoritative self-contained knowledge store (e.g. a curated vector database of trusted sources) and flag any unsupported claims. In LangGraph, I would add a new "fact_checker" node after researcher and before writer, update the state to include a fact_check_report field, and add an edge from researcher to fact_checker and from fact_checker to writer. The Writer's prompt would then instruct it to include only the fact-checker-approved claims in the final paper.
+
+Q: What would you do differently if you rebuilt this project from scratch?
+A:
+Three things: (1) Separate temperature settings per agent from day one — the Researcher needs creativity (0.6-0.7) while the Writer needs determinism (0.1-0.2) for reliable LaTeX. (2) Use an async graph invocation (ainvoke) and async tool calls from the start, because HTTP calls to arXiv, PubMed, and PDF downloads are I/O-bound and run far faster in asyncio. (3) Add structured output parsing for the research_summary using a Pydantic model so the Writer receives a typed "Research packet" (topic, key-findings list, citations) instead of a free-text blob, making the LaTeX template generation more reliable and testable.
+
+Q: How does this project demonstrate your understanding of Agentic AI vs simple AI?
+A:
+Simple AI is a single, stateless LLM call: input in, response out. This project demonstrates Agentic AI because the system: (1) plans multi-step tool usage autonomously (deciding WHICH tool and WHEN), (2) perceives the result of each action and adapts (self-correcting LaTeX compilation), (3) maintains persistent state across steps via LangGraph checkpointing, and (4) coordinates multiple specialised agents with different roles and tool sets in a structured workflow. The entire system exhibits a sense-plan-act loop that is the hallmark of agentic design.
+
+9. HUMAN-IN-THE-LOOP (HITL) & FEEDBACK LOOPS
+------------------------------------------------------------------------
+Q: How do you collect real-world feedback on the agent's performance?
+A:
+The Streamlit UI implements a Human-In-The-Loop (HITL) feedback system using `streamlit-feedback`. Every AI response is accompanied by 👍 / 👎 buttons and an optional comment box. When a user submits feedback, the `_submit_feedback` callback uses the LangSmith SDK (`create_feedback`) to link the user's rating directly to the specific `run_id` of that agent execution. This creates a data flywheel where I can go to LangSmith, filter for all "thumbs down" runs, and identify exactly where the agent's reasoning or tool selection failed.
+
+Q: How do you use this feedback to improve the model or prompts?
+A:
+Feedback isn't just for metrics; it's for data curation. In LangSmith, I can select traces with negative feedback and add them to a "Failure Cases" dataset. I then use these datasets in my offline evaluation scripts (`eval_tool_selection.py` or `eval_llm_judge.py`) to verify if a new prompt or model version correctly handles the previously failed scenarios. This closes the loop between production monitoring and development-time evaluation.
+
+Q: What is the "thread_id" and how does it relate to session management?
+A:
+The `thread_id` is a unique identifier (a UUID in my code) that LangGraph uses to partition its checkpoint database. In the Streamlit app, I generate a unique `session_id` for every browser session and pass it as the `thread_id` to `build_graph()`. This ensures that even if multiple users are researching different topics simultaneously, their conversation histories, tool results, and research states remain perfectly isolated from one another.

@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1,
+    "task": "Explain the key contributions of the Transformer architecture",
+    "category": "explanation",
+    "min_expected_score": 3.0
+  },
+  {
+    "id": 2,
+    "task": "Search for recent papers on federated learning and summarize the top 3 findings",
+    "category": "research_summary",
+    "min_expected_score": 3.0
+  },
+  {
+    "id": 3,
+    "task": "What are the main challenges in quantum error correction?",
+    "category": "technical_analysis",
+    "min_expected_score": 3.0
+  },
+  {
+    "id": 4,
+    "task": "Compare and contrast BERT and GPT architectures",
+    "category": "comparison",
+    "min_expected_score": 3.5
+  },
+  {
+    "id": 5,
+    "task": "Search PubMed for recent advances in CRISPR gene therapy and summarize the current state of the field",
+    "category": "biomedical_review",
+    "min_expected_score": 3.0
+  }
+]

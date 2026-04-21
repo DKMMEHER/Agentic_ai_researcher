@@ -1,0 +1,168 @@
+{
+  "timestamp": "2026-04-03T12:08:10.637132",
+  "chunk_size": 1000,
+  "chunk_overlap": 200,
+  "total_questions": 12,
+  "avg_context_precision": 0.458,
+  "avg_context_recall": 0.584,
+  "hit_rate": 0.583,
+  "ragas_results": null,
+  "results": [
+    {
+      "question": "What optimizer was used for training the model?",
+      "ground_truth": "The Adam optimizer was used with beta1=0.9, beta2=0.98 and epsilon=10^-9.",
+      "scores": [
+        0.277,
+        0.193,
+        0.135,
+        0.1062
+      ],
+      "context_precision": 0.25,
+      "context_recall": 0.5,
+      "hit": false
+    },
+    {
+      "question": "What is the dimensionality of the model used in the base configuration?",
+      "ground_truth": "The base model uses d_model = 512 dimensions.",
+      "scores": [
+        0.0745,
+        0.0358,
+        0.0023,
+        -0.0224
+      ],
+      "context_precision": 0.75,
+      "context_recall": 0.571,
+      "hit": true
+    },
+    {
+      "question": "How many attention heads are used in the multi-head attention mechanism?",
+      "ground_truth": "The base model uses 8 parallel attention heads (h=8).",
+      "scores": [
+        0.3519,
+        0.2964,
+        0.2619,
+        0.2341
+      ],
+      "context_precision": 0.5,
+      "context_recall": 0.75,
+      "hit": true
+    },
+    {
+      "question": "What dataset was used for English-to-German translation training?",
+      "ground_truth": "The WMT 2014 English-German dataset consisting of about 4.5 million sentence pairs was used.",
+      "scores": [
+        0.3333,
+        0.3119,
+        0.2921,
+        0.2894
+      ],
+      "context_precision": 0.0,
+      "context_recall": 0.364,
+      "hit": false
+    },
+    {
+      "question": "What is the purpose of positional encoding in the Transformer?",
+      "ground_truth": "Positional encodings are added to the input embeddings to inject information about the relative or absolute position of the tokens in the sequence, since the model contains no recurrence or convolution.",
+      "scores": [
+        0.2917,
+        0.2304,
+        0.2277,
+        0.2212
+      ],
+      "context_precision": 0.25,
+      "context_recall": 0.895,
+      "hit": true
+    },
+    {
+      "question": "What does BERT stand for?",
+      "ground_truth": "BERT stands for Bidirectional Encoder Representations from Transformers.",
+      "scores": [
+        0.2784,
+        0.2509,
+        0.2041,
+        0.1957
+      ],
+      "context_precision": 0.25,
+      "context_recall": 0.429,
+      "hit": false
+    },
+    {
+      "question": "What are the two pre-training objectives used in BERT?",
+      "ground_truth": "BERT uses two pre-training objectives: Masked Language Model (MLM) and Next Sentence Prediction (NSP).",
+      "scores": [
+        0.4856,
+        0.4513,
+        0.449,
+        0.4459
+      ],
+      "context_precision": 1.0,
+      "context_recall": 0.615,
+      "hit": true
+    },
+    {
+      "question": "How many parameters does BERT-Large have?",
+      "ground_truth": "BERT-Large has 340 million parameters with 24 layers, 1024 hidden size, and 16 attention heads.",
+      "scores": [
+        0.4058,
+        0.3388,
+        0.3323,
+        0.3219
+      ],
+      "context_precision": 0.75,
+      "context_recall": 0.692,
+      "hit": true
+    },
+    {
+      "question": "What percentage of tokens are masked during pre-training?",
+      "ground_truth": "15% of all WordPiece tokens are randomly masked during pre-training.",
+      "scores": [
+        0.3368,
+        0.328,
+        0.2889,
+        0.2645
+      ],
+      "context_precision": 0.75,
+      "context_recall": 0.625,
+      "hit": true
+    },
+    {
+      "question": "How many parameters does GPT-3 have?",
+      "ground_truth": "GPT-3 has 175 billion parameters.",
+      "scores": [
+        0.3291,
+        0.3142,
+        0.2702,
+        0.2568
+      ],
+      "context_precision": 0.75,
+      "context_recall": 0.8,
+      "hit": true
+    },
+    {
+      "question": "What are the three evaluation settings described in the paper?",
+      "ground_truth": "The three settings are zero-shot, one-shot, and few-shot, where the model is given zero, one, or a few examples of the task at inference time.",
+      "scores": [
+        0.1657,
+        0.1575,
+        0.1199,
+        0.1169
+      ],
+      "context_precision": 0.25,
+      "context_recall": 0.333,
+      "hit": false
+    },
+    {
+      "question": "What training dataset was used for GPT-3?",
+      "ground_truth": "GPT-3 was trained on a filtered version of Common Crawl, WebText2, Books1, Books2, and Wikipedia, totaling about 570GB of text.",
+      "scores": [
+        0.4408,
+        0.3923,
+        0.3497,
+        0.3236
+      ],
+      "context_precision": 0.0,
+      "context_recall": 0.429,
+      "hit": false
+    }
+  ]
+}

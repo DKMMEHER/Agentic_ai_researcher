@@ -1,0 +1,232 @@
+{
+  "timestamp": "2026-04-02T20:34:06.995391",
+  "total_cases": 8,
+  "avg_efficiency": 0.062,
+  "results": [
+    {
+      "id": 1,
+      "task": "Search for recent papers on transformer architectures",
+      "category": "simple_search",
+      "optimal_trajectory": [
+        "arxiv_search"
+      ],
+      "actual_trajectory": [
+        "arxiv_search"
+      ],
+      "errors": [
+        {
+          "tool": "arxiv_search",
+          "error": "Error: ArxivSearchError('arXiv API request failed: 429 Client Error: Unknown Error for url: https://export.arxiv.org/api/query?search_query=all:transformer+architectures&max_results=3&sortBy=submitted"
+        },
+        {
+          "tool": "SYSTEM",
+          "error": "Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01k0y2ynmmf6xs99frert6ca3n` service tier `on_demand` on tokens per day (TPD): Limit"
+        }
+      ],
+      "scores": {
+        "efficiency_score": 0.5,
+        "step_score": 1.0,
+        "tool_overlap": 1.0,
+        "error_penalty": 0.3,
+        "waste_penalty": 0.0,
+        "actual_steps": 1,
+        "optimal_steps": 1,
+        "wasted_calls": 0,
+        "error_count": 2
+      },
+      "elapsed_seconds": 2.99
+    },
+    {
+      "id": 2,
+      "task": "Find papers about mRNA vaccine development",
+      "category": "simple_search",
+      "optimal_trajectory": [
+        "pubmed_search"
+      ],
+      "actual_trajectory": [],
+      "errors": [
+        {
+          "tool": "SYSTEM",
+          "error": "Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01k0y2ynmmf6xs99frert6ca3n` service tier `on_demand` on tokens per day (TPD): Limit"
+        }
+      ],
+      "scores": {
+        "efficiency_score": 0.0,
+        "step_score": 0.0,
+        "tool_overlap": 0.0,
+        "error_penalty": 0.15,
+        "waste_penalty": 0.0,
+        "actual_steps": 0,
+        "optimal_steps": 1,
+        "wasted_calls": 0,
+        "error_count": 1
+      },
+      "elapsed_seconds": 0.32
+    },
+    {
+      "id": 3,
+      "task": "How many citations does the Attention Is All You Need paper have?",
+      "category": "simple_search",
+      "optimal_trajectory": [
+        "semantic_scholar_search"
+      ],
+      "actual_trajectory": [],
+      "errors": [
+        {
+          "tool": "SYSTEM",
+          "error": "Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01k0y2ynmmf6xs99frert6ca3n` service tier `on_demand` on tokens per day (TPD): Limit"
+        }
+      ],
+      "scores": {
+        "efficiency_score": 0.0,
+        "step_score": 0.0,
+        "tool_overlap": 0.0,
+        "error_penalty": 0.15,
+        "waste_penalty": 0.0,
+        "actual_steps": 0,
+        "optimal_steps": 1,
+        "wasted_calls": 0,
+        "error_count": 1
+      },
+      "elapsed_seconds": 0.38
+    },
+    {
+      "id": 4,
+      "task": "Read this paper and tell me the main contribution: https://arxiv.org/pdf/1706.03762v1",
+      "category": "read_and_query",
+      "optimal_trajectory": [
+        "read_pdf",
+        "query_pdf"
+      ],
+      "actual_trajectory": [],
+      "errors": [
+        {
+          "tool": "SYSTEM",
+          "error": "Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01k0y2ynmmf6xs99frert6ca3n` service tier `on_demand` on tokens per day (TPD): Limit"
+        }
+      ],
+      "scores": {
+        "efficiency_score": 0.0,
+        "step_score": 0.0,
+        "tool_overlap": 0.0,
+        "error_penalty": 0.15,
+        "waste_penalty": 0.0,
+        "actual_steps": 0,
+        "optimal_steps": 2,
+        "wasted_calls": 0,
+        "error_count": 1
+      },
+      "elapsed_seconds": 0.38
+    },
+    {
+      "id": 5,
+      "task": "Search arxiv for papers on diffusion models, then read the first paper and explain the methodology",
+      "category": "search_read_query",
+      "optimal_trajectory": [
+        "arxiv_search",
+        "read_pdf",
+        "query_pdf"
+      ],
+      "actual_trajectory": [],
+      "errors": [
+        {
+          "tool": "SYSTEM",
+          "error": "Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01k0y2ynmmf6xs99frert6ca3n` service tier `on_demand` on tokens per day (TPD): Limit"
+        }
+      ],
+      "scores": {
+        "efficiency_score": 0.0,
+        "step_score": 0.0,
+        "tool_overlap": 0.0,
+        "error_penalty": 0.15,
+        "waste_penalty": 0.0,
+        "actual_steps": 0,
+        "optimal_steps": 3,
+        "wasted_calls": 0,
+        "error_count": 1
+      },
+      "elapsed_seconds": 0.36
+    },
+    {
+      "id": 6,
+      "task": "What is Geoffrey Hinton known for?",
+      "category": "general_knowledge",
+      "optimal_trajectory": [
+        "duckduckgo_search"
+      ],
+      "actual_trajectory": [],
+      "errors": [
+        {
+          "tool": "SYSTEM",
+          "error": "Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01k0y2ynmmf6xs99frert6ca3n` service tier `on_demand` on tokens per day (TPD): Limit"
+        }
+      ],
+      "scores": {
+        "efficiency_score": 0.0,
+        "step_score": 0.0,
+        "tool_overlap": 0.0,
+        "error_penalty": 0.15,
+        "waste_penalty": 0.0,
+        "actual_steps": 0,
+        "optimal_steps": 1,
+        "wasted_calls": 0,
+        "error_count": 1
+      },
+      "elapsed_seconds": 0.37
+    },
+    {
+      "id": 7,
+      "task": "Summarize this YouTube video: https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "video_summary",
+      "optimal_trajectory": [
+        "youtube_transcript_reader"
+      ],
+      "actual_trajectory": [],
+      "errors": [
+        {
+          "tool": "SYSTEM",
+          "error": "Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01k0y2ynmmf6xs99frert6ca3n` service tier `on_demand` on tokens per day (TPD): Limit"
+        }
+      ],
+      "scores": {
+        "efficiency_score": 0.0,
+        "step_score": 0.0,
+        "tool_overlap": 0.0,
+        "error_penalty": 0.15,
+        "waste_penalty": 0.0,
+        "actual_steps": 0,
+        "optimal_steps": 1,
+        "wasted_calls": 0,
+        "error_count": 1
+      },
+      "elapsed_seconds": 0.44
+    },
+    {
+      "id": 8,
+      "task": "Find the most cited papers in reinforcement learning and check their impact",
+      "category": "multi_tool",
+      "optimal_trajectory": [
+        "semantic_scholar_search"
+      ],
+      "actual_trajectory": [],
+      "errors": [
+        {
+          "tool": "SYSTEM",
+          "error": "Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01k0y2ynmmf6xs99frert6ca3n` service tier `on_demand` on tokens per day (TPD): Limit"
+        }
+      ],
+      "scores": {
+        "efficiency_score": 0.0,
+        "step_score": 0.0,
+        "tool_overlap": 0.0,
+        "error_penalty": 0.15,
+        "waste_penalty": 0.0,
+        "actual_steps": 0,
+        "optimal_steps": 1,
+        "wasted_calls": 0,
+        "error_count": 1
+      },
+      "elapsed_seconds": 0.37
+    }
+  ]
+}

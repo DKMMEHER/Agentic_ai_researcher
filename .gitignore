@@ -1,0 +1,41 @@
+# --- Python ---
+__pycache__/
+*.py[oc]
+*.so
+build/
+dist/
+wheels/
+*.egg-info/
+.venv/
+
+# --- IDEs & Tools ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# --- Environment & Data ---
+.env
+*.db
+*.db-shm
+*.db-wal
+.chroma_db/
+logs/
+
+# --- Project Specific ---
+output/
+test_output/
+scratch/
+tectonic.exe
+
+# --- Documentation & Misc ---
+# Only ignore specific temporary/unwanted text files, not all .txt
+# pipeline.txt
+# Interview ready Q&A.txt
+# EVALUATION TECHNIQUES SUMMARY.txt
+

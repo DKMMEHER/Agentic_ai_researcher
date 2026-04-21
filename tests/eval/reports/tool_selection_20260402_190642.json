@@ -1,0 +1,271 @@
+{
+  "timestamp": "2026-04-02T19:06:41.990154",
+  "total_cases": 25,
+  "correct": 6,
+  "incorrect": 19,
+  "accuracy_percent": 24.0,
+  "category_breakdown": {
+    "biomedical": {
+      "accuracy": 0.0,
+      "correct": 0,
+      "total": 6
+    },
+    "computer_science": {
+      "accuracy": 100.0,
+      "correct": 5,
+      "total": 5
+    },
+    "citation_analysis": {
+      "accuracy": 25.0,
+      "correct": 1,
+      "total": 4
+    },
+    "video_analysis": {
+      "accuracy": 0.0,
+      "correct": 0,
+      "total": 3
+    },
+    "pdf_reading": {
+      "accuracy": 0.0,
+      "correct": 0,
+      "total": 2
+    },
+    "general_search": {
+      "accuracy": 0.0,
+      "correct": 0,
+      "total": 3
+    },
+    "vector_search": {
+      "accuracy": 0.0,
+      "correct": 0,
+      "total": 2
+    }
+  },
+  "results": [
+    {
+      "id": 1,
+      "question": "Find papers on mRNA vaccine efficacy",
+      "category": "biomedical",
+      "expected_tool": "pubmed_search",
+      "actual_tool": "arxiv_search",
+      "correct": false,
+      "elapsed_seconds": 1.04
+    },
+    {
+      "id": 2,
+      "question": "Search for recent research on CRISPR gene editing therapy",
+      "category": "biomedical",
+      "expected_tool": "pubmed_search",
+      "actual_tool": "arxiv_search",
+      "correct": false,
+      "elapsed_seconds": 0.52
+    },
+    {
+      "id": 3,
+      "question": "Find clinical trial results for cancer immunotherapy",
+      "category": "biomedical",
+      "expected_tool": "pubmed_search",
+      "actual_tool": null,
+      "correct": false,
+      "elapsed_seconds": 0.84
+    },
+    {
+      "id": 4,
+      "question": "Search for papers about protein folding in Alzheimer's disease",
+      "category": "biomedical",
+      "expected_tool": "pubmed_search",
+      "actual_tool": "arxiv_search",
+      "correct": false,
+      "elapsed_seconds": 0.79
+    },
+    {
+      "id": 5,
+      "question": "Find recent neuroscience papers on brain-computer interfaces",
+      "category": "biomedical",
+      "expected_tool": "pubmed_search",
+      "actual_tool": "arxiv_search",
+      "correct": false,
+      "elapsed_seconds": 22.14
+    },
+    {
+      "id": 6,
+      "question": "Search arxiv for papers on transformer architectures",
+      "category": "computer_science",
+      "expected_tool": "arxiv_search",
+      "actual_tool": "arxiv_search",
+      "correct": true,
+      "elapsed_seconds": 28.08
+    },
+    {
+      "id": 7,
+      "question": "Find recent papers on quantum computing error correction",
+      "category": "computer_science",
+      "expected_tool": "arxiv_search",
+      "actual_tool": "arxiv_search",
+      "correct": true,
+      "elapsed_seconds": 31.11
+    },
+    {
+      "id": 8,
+      "question": "Search for papers about reinforcement learning in robotics",
+      "category": "computer_science",
+      "expected_tool": "arxiv_search",
+      "actual_tool": "arxiv_search",
+      "correct": true,
+      "elapsed_seconds": 34.49
+    },
+    {
+      "id": 9,
+      "question": "Find new research on large language model alignment",
+      "category": "computer_science",
+      "expected_tool": "arxiv_search",
+      "actual_tool": "arxiv_search",
+      "correct": true,
+      "elapsed_seconds": 39.14
+    },
+    {
+      "id": 10,
+      "question": "Search for papers on diffusion models for image generation",
+      "category": "computer_science",
+      "expected_tool": "arxiv_search",
+      "actual_tool": "arxiv_search",
+      "correct": true,
+      "elapsed_seconds": 42.33
+    },
+    {
+      "id": 11,
+      "question": "How many citations does the paper Attention Is All You Need have?",
+      "category": "citation_analysis",
+      "expected_tool": "semantic_scholar_search",
+      "actual_tool": "semantic_scholar_search",
+      "correct": true,
+      "elapsed_seconds": 45.63
+    },
+    {
+      "id": 12,
+      "question": "What are the most influential papers that cite GPT-3?",
+      "category": "citation_analysis",
+      "expected_tool": "semantic_scholar_search",
+      "actual_tool": null,
+      "correct": false,
+      "elapsed_seconds": 0.18
+    },
+    {
+      "id": 13,
+      "question": "Check the citation count and impact of the BERT paper",
+      "category": "citation_analysis",
+      "expected_tool": "semantic_scholar_search",
+      "actual_tool": null,
+      "correct": false,
+      "elapsed_seconds": 0.2
+    },
+    {
+      "id": 14,
+      "question": "Which papers have the highest citation count in NLP research?",
+      "category": "citation_analysis",
+      "expected_tool": "semantic_scholar_search",
+      "actual_tool": null,
+      "correct": false,
+      "elapsed_seconds": 0.21
+    },
+    {
+      "id": 15,
+      "question": "Summarize this YouTube keynote: https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "video_analysis",
+      "expected_tool": "youtube_transcript_reader",
+      "actual_tool": null,
+      "correct": false,
+      "elapsed_seconds": 0.22
+    },
+    {
+      "id": 16,
+      "question": "What did Andrej Karpathy say in this talk: https://youtube.com/watch?v=abc123",
+      "category": "video_analysis",
+      "expected_tool": "youtube_transcript_reader",
+      "actual_tool": null,
+      "correct": false,
+      "elapsed_seconds": 0.2
+    },
+    {
+      "id": 17,
+      "question": "Can you transcribe this AI conference video: https://www.youtube.com/watch?v=xyz789",
+      "category": "video_analysis",
+      "expected_tool": "youtube_transcript_reader",
+      "actual_tool": null,
+      "correct": false,
+      "elapsed_seconds": 0.3
+    },
+    {
+      "id": 18,
+      "question": "Read and analyze this PDF: https://arxiv.org/pdf/1706.03762v1",
+      "category": "pdf_reading",
+      "expected_tool": "read_pdf",
+      "actual_tool": null,
+      "correct": false,
+      "elapsed_seconds": 0.21
+    },
+    {
+      "id": 19,
+      "question": "Download and ingest this paper into the database: https://arxiv.org/pdf/2301.00001v1",
+      "category": "pdf_reading",
+      "expected_tool": "read_pdf",
+      "actual_tool": null,
+      "correct": false,
+      "elapsed_seconds": 0.22
+    },
+    {
+      "id": 20,
+      "question": "What is the current state of artificial intelligence in healthcare?",
+      "category": "general_search",
+      "expected_tool": "duckduckgo_search",
+      "actual_tool": null,
+      "correct": false,
+      "elapsed_seconds": 0.21
+    },
+    {
+      "id": 21,
+      "question": "What happened at the latest NeurIPS conference?",
+      "category": "general_search",
+      "expected_tool": "duckduckgo_search",
+      "actual_tool": null,
+      "correct": false,
+      "elapsed_seconds": 0.2
+    },
+    {
+      "id": 22,
+      "question": "Who is Yann LeCun and what is his contribution to deep learning?",
+      "category": "general_search",
+      "expected_tool": "duckduckgo_search",
+      "actual_tool": null,
+      "correct": false,
+      "elapsed_seconds": 0.19
+    },
+    {
+      "id": 23,
+      "question": "What was the methodology used in this paper? The PDF has already been ingested from https://arxiv.org/pdf/1706.03762v1",
+      "category": "vector_search",
+      "expected_tool": "query_pdf",
+      "actual_tool": null,
+      "correct": false,
+      "elapsed_seconds": 0.21
+    },
+    {
+      "id": 24,
+      "question": "What training dataset did the authors use? The PDF from https://arxiv.org/pdf/1706.03762v1 is already in the database",
+      "category": "vector_search",
+      "expected_tool": "query_pdf",
+      "actual_tool": null,
+      "correct": false,
+      "elapsed_seconds": 0.2
+    },
+    {
+      "id": 25,
+      "question": "Search for papers about antibiotic resistance in bacteria",
+      "category": "biomedical",
+      "expected_tool": "pubmed_search",
+      "actual_tool": null,
+      "correct": false,
+      "elapsed_seconds": 0.25
+    }
+  ]
+}

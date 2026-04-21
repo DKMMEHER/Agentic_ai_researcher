@@ -1,0 +1,74 @@
+[
+  {
+    "id": 1,
+    "task": "Search for recent papers on transformer architectures",
+    "category": "simple_search",
+    "optimal_trajectory": ["arxiv_search"],
+    "optimal_steps": 1,
+    "max_steps": 5,
+    "description": "Single-tool task: should call arxiv_search once and return results."
+  },
+  {
+    "id": 2,
+    "task": "Find papers about mRNA vaccine development",
+    "category": "simple_search",
+    "optimal_trajectory": ["pubmed_search"],
+    "optimal_steps": 1,
+    "max_steps": 5,
+    "description": "Single-tool task: should use pubmed_search for biomedical topics."
+  },
+  {
+    "id": 3,
+    "task": "How many citations does the Attention Is All You Need paper have?",
+    "category": "simple_search",
+    "optimal_trajectory": ["semantic_scholar_search"],
+    "optimal_steps": 1,
+    "max_steps": 5,
+    "description": "Single-tool task: should use semantic_scholar for citation queries."
+  },
+  {
+    "id": 4,
+    "task": "Read this paper and tell me the main contribution: https://arxiv.org/pdf/1706.03762v1",
+    "category": "read_and_query",
+    "optimal_trajectory": ["read_pdf", "query_pdf"],
+    "optimal_steps": 2,
+    "max_steps": 8,
+    "description": "Two-step RAG: ingest via read_pdf, then query_pdf for specific info."
+  },
+  {
+    "id": 5,
+    "task": "Search arxiv for papers on diffusion models, then read the first paper and explain the methodology",
+    "category": "search_read_query",
+    "optimal_trajectory": ["arxiv_search", "read_pdf", "query_pdf"],
+    "optimal_steps": 3,
+    "max_steps": 10,
+    "description": "Three-step workflow: search, ingest, then query for methodology."
+  },
+  {
+    "id": 6,
+    "task": "What is Geoffrey Hinton known for?",
+    "category": "general_knowledge",
+    "optimal_trajectory": ["duckduckgo_search"],
+    "optimal_steps": 1,
+    "max_steps": 5,
+    "description": "General knowledge: should use web search, not academic tools."
+  },
+  {
+    "id": 7,
+    "task": "Summarize this YouTube video: https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    "category": "video_summary",
+    "optimal_trajectory": ["youtube_transcript_reader"],
+    "optimal_steps": 1,
+    "max_steps": 5,
+    "description": "Single-tool: should directly call youtube_transcript_reader."
+  },
+  {
+    "id": 8,
+    "task": "Find the most cited papers in reinforcement learning and check their impact",
+    "category": "multi_tool",
+    "optimal_trajectory": ["semantic_scholar_search"],
+    "optimal_steps": 1,
+    "max_steps": 8,
+    "description": "Citation analysis: semantic_scholar returns citation counts directly."
+  }
+]

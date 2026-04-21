@@ -1,0 +1,71 @@
+[
+  {
+    "id": 1,
+    "pdf_url": "https://arxiv.org/pdf/1706.03762v1",
+    "paper_title": "Attention Is All You Need",
+    "questions": [
+      {
+        "question": "What optimizer was used for training the model?",
+        "ground_truth": "The Adam optimizer was used with beta1=0.9, beta2=0.98 and epsilon=10^-9."
+      },
+      {
+        "question": "What is the dimensionality of the model used in the base configuration?",
+        "ground_truth": "The base model uses d_model = 512 dimensions."
+      },
+      {
+        "question": "How many attention heads are used in the multi-head attention mechanism?",
+        "ground_truth": "The base model uses 8 parallel attention heads (h=8)."
+      },
+      {
+        "question": "What dataset was used for English-to-German translation training?",
+        "ground_truth": "The WMT 2014 English-German dataset consisting of about 4.5 million sentence pairs was used."
+      },
+      {
+        "question": "What is the purpose of positional encoding in the Transformer?",
+        "ground_truth": "Positional encodings are added to the input embeddings to inject information about the relative or absolute position of the tokens in the sequence, since the model contains no recurrence or convolution."
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "pdf_url": "https://arxiv.org/pdf/1810.04805v2",
+    "paper_title": "BERT: Pre-training of Deep Bidirectional Transformers",
+    "questions": [
+      {
+        "question": "What does BERT stand for?",
+        "ground_truth": "BERT stands for Bidirectional Encoder Representations from Transformers."
+      },
+      {
+        "question": "What are the two pre-training objectives used in BERT?",
+        "ground_truth": "BERT uses two pre-training objectives: Masked Language Model (MLM) and Next Sentence Prediction (NSP)."
+      },
+      {
+        "question": "How many parameters does BERT-Large have?",
+        "ground_truth": "BERT-Large has 340 million parameters with 24 layers, 1024 hidden size, and 16 attention heads."
+      },
+      {
+        "question": "What percentage of tokens are masked during pre-training?",
+        "ground_truth": "15% of all WordPiece tokens are randomly masked during pre-training."
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "pdf_url": "https://arxiv.org/pdf/2005.14165v4",
+    "paper_title": "GPT-3: Language Models are Few-Shot Learners",
+    "questions": [
+      {
+        "question": "How many parameters does GPT-3 have?",
+        "ground_truth": "GPT-3 has 175 billion parameters."
+      },
+      {
+        "question": "What are the three evaluation settings described in the paper?",
+        "ground_truth": "The three settings are zero-shot, one-shot, and few-shot, where the model is given zero, one, or a few examples of the task at inference time."
+      },
+      {
+        "question": "What training dataset was used for GPT-3?",
+        "ground_truth": "GPT-3 was trained on a filtered version of Common Crawl, WebText2, Books1, Books2, and Wikipedia, totaling about 570GB of text."
+      }
+    ]
+  }
+]

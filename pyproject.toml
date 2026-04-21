@@ -1,0 +1,109 @@
+[project]
+name = "ai-researcher"
+version = "0.2.0"
+description = "An agentic AI system that searches arXiv papers, analyzes research, and generates LaTeX papers using LangGraph and Google Gemini."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.11"
+
+dependencies = [
+    "langchain>=0.3.27",
+    "langchain-community>=0.3.0",
+    "langchain-core>=0.3.72",
+    "langchain-groq>=0.2.1",
+    "langgraph>=0.6.3",
+    "pymupdf>=1.24.0",
+    "python-dotenv>=1.1.1",
+    "requests>=2.32.4",
+    "streamlit>=1.48.0",
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
+    "duckduckgo-search>=5.3.0",
+    "tavily-python>=0.3.3",
+    "youtube-transcript-api>=0.6.2",
+    "chromadb>=0.5.5",
+    "sentence-transformers>=3.0.0",
+    "langchain-chroma>=0.1.4",
+    "langchain-huggingface>=0.0.3",
+    "torchvision>=0.26.0",
+    "ragas>=0.4.3",
+    "langchain-google-genai>=2.1.12",
+    "streamlit-feedback>=0.1.4",
+    "fastapi>=0.135.3",
+    "uvicorn>=0.42.0",
+    "sse-starlette>=3.3.4",
+    "httpx>=0.28.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-cov>=5.0.0",
+    "pytest-asyncio>=0.23.0",
+    "ruff>=0.8.0",
+    "mypy>=1.10.0",
+    "types-requests>=2.31.0",
+]
+
+[project.scripts]
+ai-researcher = "ai_researcher.cli:main"
+
+[build-system]
+requires = ["setuptools>=70.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+# --- Ruff (linter + formatter) ---
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "N",    # pep8-naming
+    "UP",   # pyupgrade
+    "B",    # flake8-bugbear
+    "SIM",  # flake8-simplify
+    "RUF",  # ruff-specific rules
+]
+ignore = ["E501"]  # line length handled by formatter
+
+[tool.ruff.lint.isort]
+known-first-party = ["ai_researcher"]
+
+# --- Mypy ---
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+check_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = [
+    "langchain_core.*",
+    "langchain_groq.*",
+    "langgraph.*",
+    "PyPDF2.*",
+    "streamlit.*",
+]
+ignore_missing_imports = true
+
+# --- Pytest ---
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+markers = [
+    "e2e: end-to-end integration tests that exercise the full agent graph",
+]

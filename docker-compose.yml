@@ -1,0 +1,20 @@
+services:
+  # Monolithic AI Researcher (Backend + UI)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - SERPER_API_KEY=${SERPER_API_KEY}
+      - TAVILY_API_KEY=${TAVILY_API_KEY}
+      # Default to a reliable model, user can override via .env
+      - MODEL_NAME=gemini-1.5-flash
+    ports:
+      - "8501:8501" # Streamlit UI
+      - "8000:8000" # FastAPI Backend (internal but exposed for testing)
+    volumes:
+      - ./output:/app/output
+
+# The postgres_data and db service have been removed as part of the SQLite standardization.

@@ -1,0 +1,77 @@
+========================================================================
+             AI RESEARCH AGENT: EVALUATION TECHNIQUES SUMMARY
+========================================================================
+
+This document summarizes the enterprise-grade evaluation framework implemented in the Agentic AI Researcher project. These techniques ensure the agent's reliability, accuracy, and efficiency across its multi-agent lifecycle.
+
+1. END-TO-END TOPOLOGY TESTING (MOCKING)
+------------------------------------------------------------------------
+* File: tests/test_agent_e2e.py
+* Technique: Uses pytest and unittest.mock.MagicMock to inject hardcoded LLM responses into the LangGraph state machine.
+* Purpose: To deterministically test the graph's complex routing logic (e.g., verifying researcher-to-writer handoff, simulating LaTeX errors for self-correction loops) without API costs or non-deterministic variance.
+
+2. LLM-AS-A-JUDGE OUTPUT SCORING
+------------------------------------------------------------------------
+* File: tests/eval/eval_llm_judge.py
+* Technique: A second, strict "Judge" LLM (Gemini 2.0 Flash or Llama 70B) grades the final research summary using a structured rubric. It expects a raw JSON response (1-5 scale) with justifications.
+* Purpose: Provides quantitative 1-5 scores across five key academic dimensions:
+    1. **ACCURACY:** Verifies if stated facts are correct and if paper titles, authors, and dates are verifiable.
+    2. **COMPLETENESS:** Determines if the response covers all requested aspects and includes core concepts, methods, and findings.
+    3. **COHERENCE:** Judges logical structure, flow, and the smoothness of transitions between research sections.
+    4. **CITATION_QUALITY:** Checks for proper referencing, including valid paper titles, URLs, or DOIs.
+    5. **DEPTH:** Evaluates if the response provides expert-level technical details, equations, or methodologies instead of surface-level summaries.
+* Why it matters: Enables "Data-Driven Prompt Engineering"—you can quantitatively prove that a prompt change improved "Depth" without sacrificing "Accuracy."
+
+3. TOOL SELECTION ACCURACY (INTENT RECOGNITION)
+------------------------------------------------------------------------
+* File: tests/eval/eval_tool_selection.py
+* Technique: Streams user queries and intercepts the very first tool call decision made by the agent against a JSON dataset of "expected tools."
+* Purpose: Measures the agent's ability to correctly map user intent to specific domains (e.g., BioMed -> PubMed, CS -> arXiv) and prevents incorrect tool usage or "tool-spamming."
+
+4. AGENT TRAJECTORY & LOOP EFFICIENCY
+------------------------------------------------------------------------
+* File: tests/eval/eval_trajectory.py
+* Technique: Executes multi-step tasks and compares the trace against an "optimal_trajectory."
+* Metrics:
+    1. **STEP EFFICIENCY (40%):** Ratio of optimal steps to actual steps taken.
+    2. **TOOL OVERLAP (40%):** Measures if the agent used the *exact* required tools for the task.
+    3. **ERROR PENALTY (-15% per error):** Heavily penalizes tool execution failures (e.g., rate limits).
+    4. **WASTE PENALTY (-10% per call):** Penalizes "hallucinated" tool calls or redundant steps.
+* Purpose: Quantifies agent autonomy and cost-efficiency (token usage).
+
+5. RAG RETRIEVAL QUALITY (WITH RAGAS)
+------------------------------------------------------------------------
+* File: tests/eval/eval_rag.py
+* Technique: Measures retrieval performance against ground-truth answers for ingested PDFs.
+* Metrics:
+    1. **CONTEXT PRECISION:** What percentage of retrieved chunks actually contain the ground-truth keywords? (Relevance density)
+    2. **CONTEXT RECALL:** What fraction of the ground-truth keywords appear across *all* retrieved chunks? (Coverage)
+    3. **HIT RATE:** A binary metric (Recall > 0.5) indicating if any chunk contained the "core" answer.
+    4. **RAGAS:** Integrated framework for LLM-based *Faithfulness* and *Answer Relevancy*.
+    
+        1. Faithfulness (The "No Hallucination" Metric)
+        What it is: It measures how well the answer is derived strictly from the retrieved context.
+        How it works: The LLM judge takes the Answer and the Context, breaks the answer down into individual claims, and checks if every single claim can be found in the context.
+        Why it's technical: If your agent says "The sky is green" and your PDF says "The sky is blue," the Faithfulness score will be 0, even if the sentence is grammatically perfect. It detects when the model is "hallucinating" from its own internal knowledge instead of using your data.
+        
+        2. Answer Relevancy (The "Directness" Metric)
+        What it is: It measures how pertinent the assistant's answer is to the user's original query.
+        How it works: RAGAS uses a "reverse-questioning" technique. It takes the generated Answer and asks an LLM to guess what the Question was. It then calculates the vector similarity between the original question and the guessed question.
+        Why it's technical: It penalizes "fluff" or incomplete answers. If you ask "What is the learning rate?" and the agent gives a 5-paragraph essay on what deep learning is but hides the learning rate in the last sentence, the Relevancy score will be low.
+
+        * Purpose: Validates chunking strategies (1000 size / 200 overlap) and embedding model quality.
+
+6. EXTERNAL CLOUD OBSERVABILITY (LANGSMITH)
+------------------------------------------------------------------------
+* File: tests/eval/langsmith_evaluate.py
+* Technique: Syncs local test runs, token usage, latency, and correctness scores with LangSmith datasets.
+* Purpose: Enables high-fidelity A/B testing between different versions of the agent (e.g., comparing Prompt V1 vs. Prompt V2) with a visual dashboard for side-by-side execution analysis.
+
+7. HUMAN-IN-THE-LOOP (HITL) FEEDBACK
+------------------------------------------------------------------------
+* File: src/ai_researcher/ui/streamlit_app.py
+* Technique: Integrates 👍 / 👎 feedback buttons in the Streamlit UI linked to LangSmith's feedback API.
+* Purpose: Captures real-user satisfaction scores and qualitative comments. These "production failures" are then converted into new test cases for the offline evaluation datasets, creating a continuous improvement flywheel.
+
+SUMMARY FOR INTERVIEW:
+"My project employs a 7-layer evaluation harness encompassing deterministic Pytest mocks, Agent Trajectory efficiency scoring, RAGAS retrieval metrics, LLM-as-a-judge quality tracking, and a production HITL feedback loop mapped to LangSmith for continuous observability and data-driven prompt tuning."

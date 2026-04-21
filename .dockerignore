@@ -1,0 +1,39 @@
+# --- Local Environment & Caches ---
+.venv/
+__pycache__/
+*.py[oc]
+*.pyd
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# --- Git ---
+.git/
+.github/
+.gitignore
+
+# --- Data & State ---
+*.db
+*.db-shm
+*.db-wal
+.chroma_db/
+.env
+
+# --- Project Artifacts ---
+output/
+test_output/
+scratch/
+logs/
+figures/
+tectonic.exe
+
+# --- Tests & Documentation ---
+tests/
+pipeline.txt
+interview_preparation_Q&A.txt
+EVALUATION TECHNIQUES SUMMARY.txt
+*.md
+!README.md
+

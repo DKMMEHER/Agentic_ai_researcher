@@ -1,0 +1,152 @@
+[
+  {
+    "id": 1,
+    "question": "Find papers on mRNA vaccine efficacy",
+    "expected_tool": "pubmed_search",
+    "category": "biomedical"
+  },
+  {
+    "id": 2,
+    "question": "Search for recent research on CRISPR gene editing therapy",
+    "expected_tool": "pubmed_search",
+    "category": "biomedical"
+  },
+  {
+    "id": 3,
+    "question": "Find clinical trial results for cancer immunotherapy",
+    "expected_tool": "pubmed_search",
+    "category": "biomedical"
+  },
+  {
+    "id": 4,
+    "question": "Search for papers about protein folding in Alzheimer's disease",
+    "expected_tool": "pubmed_search",
+    "category": "biomedical"
+  },
+  {
+    "id": 5,
+    "question": "Find recent neuroscience papers on brain-computer interfaces",
+    "expected_tool": "pubmed_search",
+    "category": "biomedical"
+  },
+  {
+    "id": 6,
+    "question": "Search arxiv for papers on transformer architectures",
+    "expected_tool": "arxiv_search",
+    "category": "computer_science"
+  },
+  {
+    "id": 7,
+    "question": "Find recent papers on quantum computing error correction",
+    "expected_tool": "arxiv_search",
+    "category": "computer_science"
+  },
+  {
+    "id": 8,
+    "question": "Search for papers about reinforcement learning in robotics",
+    "expected_tool": "arxiv_search",
+    "category": "computer_science"
+  },
+  {
+    "id": 9,
+    "question": "Find new research on large language model alignment",
+    "expected_tool": "arxiv_search",
+    "category": "computer_science"
+  },
+  {
+    "id": 10,
+    "question": "Search for papers on diffusion models for image generation",
+    "expected_tool": "arxiv_search",
+    "category": "computer_science"
+  },
+  {
+    "id": 11,
+    "question": "How many citations does the paper Attention Is All You Need have?",
+    "expected_tool": "semantic_scholar_search",
+    "category": "citation_analysis"
+  },
+  {
+    "id": 12,
+    "question": "What are the most influential papers that cite GPT-3?",
+    "expected_tool": "semantic_scholar_search",
+    "category": "citation_analysis"
+  },
+  {
+    "id": 13,
+    "question": "Check the citation count and impact of the BERT paper",
+    "expected_tool": "semantic_scholar_search",
+    "category": "citation_analysis"
+  },
+  {
+    "id": 14,
+    "question": "Which papers have the highest citation count in NLP research?",
+    "expected_tool": "semantic_scholar_search",
+    "category": "citation_analysis"
+  },
+  {
+    "id": 15,
+    "question": "Summarize this YouTube keynote: https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    "expected_tool": "youtube_transcript_reader",
+    "category": "video_analysis"
+  },
+  {
+    "id": 16,
+    "question": "What did Andrej Karpathy say in this talk: https://youtube.com/watch?v=abc123",
+    "expected_tool": "youtube_transcript_reader",
+    "category": "video_analysis"
+  },
+  {
+    "id": 17,
+    "question": "Can you transcribe this AI conference video: https://www.youtube.com/watch?v=xyz789",
+    "expected_tool": "youtube_transcript_reader",
+    "category": "video_analysis"
+  },
+  {
+    "id": 18,
+    "question": "Read and analyze this PDF: https://arxiv.org/pdf/1706.03762v1",
+    "expected_tool": "read_pdf",
+    "category": "pdf_reading"
+  },
+  {
+    "id": 19,
+    "question": "Download and ingest this paper into the database: https://arxiv.org/pdf/2301.00001v1",
+    "expected_tool": "read_pdf",
+    "category": "pdf_reading"
+  },
+  {
+    "id": 20,
+    "question": "What is the current state of artificial intelligence in healthcare?",
+    "expected_tool": "duckduckgo_search",
+    "category": "general_search"
+  },
+  {
+    "id": 21,
+    "question": "What happened at the latest NeurIPS conference?",
+    "expected_tool": "duckduckgo_search",
+    "category": "general_search"
+  },
+  {
+    "id": 22,
+    "question": "Who is Yann LeCun and what is his contribution to deep learning?",
+    "expected_tool": "duckduckgo_search",
+    "category": "general_search"
+  },
+  {
+    "id": 23,
+    "question": "What was the methodology used in this paper? The PDF has already been ingested from https://arxiv.org/pdf/1706.03762v1",
+    "expected_tool": "query_pdf",
+    "category": "vector_search"
+  },
+  {
+    "id": 24,
+    "question": "What training dataset did the authors use? The PDF from https://arxiv.org/pdf/1706.03762v1 is already in the database",
+    "expected_tool": "query_pdf",
+    "category": "vector_search"
+  },
+  {
+    "id": 25,
+    "question": "Search for papers about antibiotic resistance in bacteria",
+    "expected_tool": "pubmed_search",
+    "category": "biomedical"
+  }
+]

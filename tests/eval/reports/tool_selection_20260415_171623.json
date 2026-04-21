@@ -1,0 +1,36 @@
+{
+  "timestamp": "2026-04-15T17:16:23.954832",
+  "total_cases": 2,
+  "correct": 0,
+  "incorrect": 2,
+  "accuracy_percent": 0.0,
+  "category_breakdown": {
+    "biomedical": {
+      "accuracy": 0.0,
+      "correct": 0,
+      "total": 2
+    }
+  },
+  "results": [
+    {
+      "id": 1,
+      "question": "Find papers on mRNA vaccine efficacy",
+      "category": "biomedical",
+      "expected_tool": "pubmed_search",
+      "actual_tool": null,
+      "intent": null,
+      "correct": false,
+      "elapsed_seconds": 0.08
+    },
+    {
+      "id": 2,
+      "question": "Search for recent research on CRISPR gene editing therapy",
+      "category": "biomedical",
+      "expected_tool": "pubmed_search",
+      "actual_tool": null,
+      "intent": null,
+      "correct": false,
+      "elapsed_seconds": 0.01
+    }
+  ]
+}
