@@ -33,6 +33,7 @@ dependencies = [
     "uvicorn>=0.42.0",
     "sse-starlette>=3.3.4",
     "httpx>=0.28.1",
+    "wikipedia>=1.4.0",
 ]
 
 [project.optional-dependencies]
