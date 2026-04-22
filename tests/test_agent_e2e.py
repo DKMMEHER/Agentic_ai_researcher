@@ -38,9 +38,7 @@ class TestArxivSearchRouting:
         # --- Arrange: LLM script ---
         responses = [
             # Step 1: LLM decides to call arxiv_search
-            make_tool_call_message(
-                "arxiv_search", {"topic": "transformers"}
-            ),
+            make_tool_call_message("arxiv_search", {"topic": "transformers"}),
             # Step 2: After tool result, LLM gives final answer
             make_plain_message(
                 "I found 2 papers on transformers. Here are the results..."
@@ -58,7 +56,11 @@ class TestArxivSearchRouting:
 
         # --- Act ---
         result = graph.invoke(
-            {"messages": [{"role": "user", "content": "Search arxiv for transformers"}]},
+            {
+                "messages": [
+                    {"role": "user", "content": "Search arxiv for transformers"}
+                ]
+            },
             config,
         )
 
@@ -121,9 +123,15 @@ class TestPdfIngestion:
             mock_pages.append(page)
         mock_reader.pages = mock_pages
 
-        with patch("ai_researcher.tools.pdf_reader.PyPDF2.PdfReader", return_value=mock_reader):
+        with patch(
+            "ai_researcher.tools.pdf_reader.PyPDF2.PdfReader", return_value=mock_reader
+        ):
             result = graph.invoke(
-                {"messages": [{"role": "user", "content": f"Read this PDF: {fake_url}"}]},
+                {
+                    "messages": [
+                        {"role": "user", "content": f"Read this PDF: {fake_url}"}
+                    ]
+                },
                 config,
             )
 
@@ -184,7 +192,14 @@ class TestQueryPdf:
         graph, config = build_e2e_graph(responses=responses)
 
         result = graph.invoke(
-            {"messages": [{"role": "user", "content": "What is the methodology in this paper?"}]},
+            {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "What is the methodology in this paper?",
+                    }
+                ]
+            },
             config,
         )
 
@@ -201,7 +216,9 @@ class TestQueryPdf:
         assert any(
             keyword in tool_content.lower()
             for keyword in ["methodology", "attention", "self-attention"]
-        ), f"query_pdf result should contain relevant content, got: {tool_content[:200]}"
+        ), (
+            f"query_pdf result should contain relevant content, got: {tool_content[:200]}"
+        )
 
 
 # =========================================================================
@@ -241,7 +258,10 @@ class TestWebSearchRouting:
         result = graph.invoke(
             {
                 "messages": [
-                    {"role": "user", "content": "Search the web for latest breakthroughs in quantum computing"}
+                    {
+                        "role": "user",
+                        "content": "Search the web for latest breakthroughs in quantum computing",
+                    }
                 ]
             },
             config,
@@ -281,9 +301,7 @@ class TestMultiStepChain:
 
         responses = [
             # Step 1: LLM calls arxiv_search
-            make_tool_call_message(
-                "arxiv_search", {"topic": "attention mechanisms"}
-            ),
+            make_tool_call_message("arxiv_search", {"topic": "attention mechanisms"}),
             # Step 2: After seeing arXiv results, LLM calls read_pdf
             make_tool_call_message("read_pdf", {"url": fake_url}),
             # Step 3: Final answer
@@ -378,9 +396,9 @@ class TestConversationalNoTool:
 
         # The AI message should have NO tool calls
         ai_msg = messages[-1]
-        assert not getattr(
-            ai_msg, "tool_calls", None
-        ), "Greeting should not trigger any tool calls"
+        assert not getattr(ai_msg, "tool_calls", None), (
+            "Greeting should not trigger any tool calls"
+        )
 
         # Should contain a sensible response
         assert len(ai_msg.content) > 10, "AI should give a substantive response"

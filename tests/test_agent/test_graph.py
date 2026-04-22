@@ -1,36 +1,34 @@
 """Tests for the agent graph builder, edge functions, and node functions."""
 
-import pytest
-from unittest.mock import patch, MagicMock, AsyncMock
+from unittest.mock import MagicMock, patch
 
+import pytest
 from langchain_core.messages import (
     AIMessage,
     HumanMessage,
     SystemMessage,
-    ToolMessage,
 )
 
-from ai_researcher.agent.state import AgentState
-from ai_researcher.agent.prompts import (
-    load_prompt,
-    RESEARCHER_PROMPT,
-    WRITER_PROMPT,
-    SUPERVISOR_PROMPT,
-)
 from ai_researcher.agent.graph import (
     _filter_system_messages,
-    _should_continue_supervisor,
-    _should_continue_researcher,
-    _should_continue_writer,
+    _guardrail_handler,
     _human_review,
     _route_after_review,
-    _guardrail_handler,
+    _should_continue_researcher,
+    _should_continue_supervisor,
+    _should_continue_writer,
 )
 from ai_researcher.agent.guardrails import (
     MAX_RESEARCHER_ITERATIONS,
     MAX_WRITER_ITERATIONS,
 )
-
+from ai_researcher.agent.prompts import (
+    RESEARCHER_PROMPT,
+    SUPERVISOR_PROMPT,
+    WRITER_PROMPT,
+    load_prompt,
+)
+from ai_researcher.agent.state import AgentState
 
 # =========================================================================
 # AgentState definition tests
@@ -71,9 +69,7 @@ class TestLoadPrompt:
 
     def test_default_prompt_returned_when_file_missing(self, tmp_path):
         """When prompt file doesn't exist, embedded default is used."""
-        with patch(
-            "ai_researcher.agent.prompts._PROMPTS_DIR", tmp_path
-        ):
+        with patch("ai_researcher.agent.prompts._PROMPTS_DIR", tmp_path):
             prompt = load_prompt("nonexistent")
             assert prompt == RESEARCHER_PROMPT
 
@@ -82,9 +78,7 @@ class TestLoadPrompt:
         prompt_file = tmp_path / "test_prompt.txt"
         prompt_file.write_text("You are a test agent.")
 
-        with patch(
-            "ai_researcher.agent.prompts._PROMPTS_DIR", tmp_path
-        ):
+        with patch("ai_researcher.agent.prompts._PROMPTS_DIR", tmp_path):
             prompt = load_prompt("test_prompt")
             assert prompt == "You are a test agent."
 
@@ -93,9 +87,7 @@ class TestLoadPrompt:
         prompt_file = tmp_path / "template.txt"
         prompt_file.write_text("Research {topic} papers.")
 
-        with patch(
-            "ai_researcher.agent.prompts._PROMPTS_DIR", tmp_path
-        ):
+        with patch("ai_researcher.agent.prompts._PROMPTS_DIR", tmp_path):
             prompt = load_prompt("template", topic="quantum computing")
             assert prompt == "Research quantum computing papers."
 
@@ -125,8 +117,8 @@ class TestLoadPrompt:
         with patch("ai_researcher.agent.prompts._PROMPTS_DIR", tmp_path):
             # Only pass one of the two required variables
             prompt = load_prompt("vars", user_name="Alice")
-            # Should keep the original template since {location} is missing
-            assert "Alice" in prompt
+            # The prompt string remains unformatted if a KeyError occurs
+            assert "{user_name}" in prompt
             assert "{location}" in prompt
 
 

@@ -1,9 +1,12 @@
 """Tests for the PDF querying tool."""
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 from langchain_core.documents import Document
-from ai_researcher.tools.query_pdf import query_pdf, QueryPDFError
+
+from ai_researcher.tools.query_pdf import QueryPDFError, query_pdf
+
 
 class TestQueryPdf:
     """Tests for PDF semantic search tool."""
@@ -17,23 +20,24 @@ class TestQueryPdf:
 
         # Mock similarity search results
         mock_docs = [
-            Document(page_content="Model A is 10 layers deep.", metadata={"source": "url1"}),
-            Document(page_content="Model A uses Adam optimizer.", metadata={"source": "url1"})
+            Document(
+                page_content="Model A is 10 layers deep.", metadata={"source": "url1"}
+            ),
+            Document(
+                page_content="Model A uses Adam optimizer.", metadata={"source": "url1"}
+            ),
         ]
         mock_store.similarity_search.return_value = mock_docs
 
-        result = query_pdf.invoke({
-            "url": "url1",
-            "search_query": "how deep is model A?"
-        })
+        result = query_pdf.invoke(
+            {"url": "url1", "search_query": "how deep is model A?"}
+        )
 
         assert "--- Search Result 1 ---" in result
         assert "10 layers deep" in result
         assert "Adam optimizer" in result
         mock_store.similarity_search.assert_called_once_with(
-            "how deep is model A?",
-            k=4,
-            filter={"source": "url1"}
+            "how deep is model A?", k=4, filter={"source": "url1"}
         )
 
     @patch("ai_researcher.tools.query_pdf.get_vector_store")
@@ -43,10 +47,7 @@ class TestQueryPdf:
         mock_get_store.return_value = mock_store
         mock_store.similarity_search.return_value = []
 
-        result = query_pdf.invoke({
-            "url": "url1",
-            "search_query": "random query"
-        })
+        result = query_pdf.invoke({"url": "url1", "search_query": "random query"})
 
         assert "No results found" in result
 

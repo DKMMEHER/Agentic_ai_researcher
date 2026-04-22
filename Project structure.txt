@@ -1,0 +1,58 @@
+Agentic_ai_researcher/
+├── src/
+│   └── ai_researcher/         # Core application code
+│       ├── agent/             # Graph logic, state, and supervisor routing
+│       │   ├── checkpointer.py
+│       │   ├── graph.py
+│       │   ├── guardrails.py
+│       │   ├── prompts.py
+│       │   ├── state.py
+│       │   └── supervisor.py
+│       ├── models/            # Pydantic data schemas
+│       │   ├── api_schemas.py
+│       │   └── schemas.py
+│       ├── server/            # FastAPI backend logic
+│       │   └── main.py
+│       ├── tools/             # Agent tools (API integrations, utilities)
+│       │   ├── arxiv.py
+│       │   ├── db.py
+│       │   ├── google_scholar.py
+│       │   ├── latex_renderer.py
+│       │   ├── pdf_reader.py
+│       │   ├── pubmed.py
+│       │   ├── query_pdf.py
+│       │   ├── scratchpad.py
+│       │   ├── semantic_scholar.py
+│       │   ├── summarizer.py
+│       │   ├── web_search.py
+│       │   ├── wikipedia_tool.py
+│       │   └── youtube.py
+│       ├── ui/                # Streamlit frontend & client
+│       │   ├── client.py
+│       │   └── streamlit_app.py
+│       ├── cli.py             # CLI entry points
+│       ├── config.py          # Centralized configuration (pydantic-settings)
+│       ├── exceptions.py      # Custom exceptions
+│       └── logging.py         # Logging configuration
+├── tests/                     # Pytest suite
+│   ├── eval/                  # LangSmith evaluations and datasets
+│   ├── test_agent/            # Agent logic tests
+│   ├── test_server/           # FastAPI backend tests
+│   ├── test_tools/            # Tools unit tests
+│   ├── conftest.py            # Pytest configuration
+│   └── conftest_e2e.py        # End-to-End Test configuration
+├── prompts/                   # Externalized system prompts
+│   ├── researcher.txt
+│   ├── supervisor.txt
+│   └── writer.txt
+├── .github/workflows/         # CI/CD pipelines (e.g., ci.yml)
+├── Dockerfile                 # Docker container instructions
+├── docker-compose.yml         # Multi-container local execution setup
+├── entrypoint.sh              # Startup orchestration script
+├── Makefile                   # Development commands and shortcuts
+├── pyproject.toml             # Dependency and project config (uv)
+├── uv.lock                    # Dependency lockfile
+├── README.md                  # Project documentation
+├── .env.example               # Environment variables template
+├── .gitignore                 # Files to be ignored by Git
+└── output/                    # Local directory for generated PDFs/checkpoints (ignored)

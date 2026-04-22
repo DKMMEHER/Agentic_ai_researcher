@@ -1,15 +1,16 @@
 """Tests for the arXiv search tool."""
 
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
-from ai_researcher.tools.arxiv import (
-    _sanitize_query,
-    _parse_arxiv_xml,
-    _search_arxiv_papers,
-)
+import pytest
+
 from ai_researcher.exceptions import ArxivSearchError
 from ai_researcher.models.schemas import SearchResult
+from ai_researcher.tools.arxiv import (
+    _parse_arxiv_xml,
+    _sanitize_query,
+    _search_arxiv_papers,
+)
 
 
 class TestSanitizeQuery:
@@ -38,7 +39,7 @@ class TestSanitizeQuery:
 
     def test_only_special_chars_raises(self):
         with pytest.raises(ArxivSearchError):
-            _sanitize_query('()"\'')
+            _sanitize_query("()\"'")
 
     def test_lowercases(self):
         result = _sanitize_query("QUANTUM Computing")
@@ -95,6 +96,7 @@ class TestSearchArxivPapers:
     @patch("ai_researcher.tools.arxiv.requests.get")
     def test_failed_request_raises(self, mock_get):
         import requests
+
         mock_get.side_effect = requests.RequestException("Network error")
 
         with pytest.raises(ArxivSearchError):
@@ -105,18 +107,14 @@ class TestSearchResult:
     """Tests for the SearchResult model."""
 
     def test_from_entries(self, sample_paper_entries):
-        result = SearchResult.from_entries(
-            query="test", entries=sample_paper_entries
-        )
+        result = SearchResult.from_entries(query="test", entries=sample_paper_entries)
         assert result.total_results == 2
         assert result.query == "test"
         assert len(result.papers) == 2
         assert result.papers[0].title == "Attention Is All You Need"
 
     def test_model_dump(self, sample_paper_entries):
-        result = SearchResult.from_entries(
-            query="test", entries=sample_paper_entries
-        )
+        result = SearchResult.from_entries(query="test", entries=sample_paper_entries)
         data = result.model_dump()
         assert isinstance(data, dict)
         assert "papers" in data

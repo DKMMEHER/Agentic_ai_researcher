@@ -1,9 +1,16 @@
 """Tests for the web search tools."""
 
 import json
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
-from ai_researcher.tools.web_search import duckduckgo_search, tavily_search, WebSearchError
+
+from ai_researcher.tools.web_search import (
+    WebSearchError,
+    duckduckgo_search,
+    tavily_search,
+)
+
 
 class TestDuckDuckGoSearch:
     """Tests for DuckDuckGo search tool."""
@@ -18,7 +25,7 @@ class TestDuckDuckGoSearch:
         # Mock text search results
         mock_results = [
             {"title": "Result 1", "href": "url1", "body": "Snippet 1"},
-            {"title": "Result 2", "href": "url2", "body": "Snippet 2"}
+            {"title": "Result 2", "href": "url2", "body": "Snippet 2"},
         ]
         mock_ddgs.text.return_value = mock_results
 

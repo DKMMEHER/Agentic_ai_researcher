@@ -15,7 +15,7 @@ _PROMPTS_DIR = Path(__file__).resolve().parent.parent.parent.parent / "prompts"
 
 RESEARCHER_PROMPT = """\
 You are an expert researcher. Your sole objective is to search for relevant literature, read papers, \
-and synthesize scientific facts into a comprehensive, plain-text research summary. 
+and synthesize scientific facts into a comprehensive, plain-text research summary.
 You do not format final papers and you do not write LaTeX.
 
 Use your tools to find papers (especially on arXiv) and extract details.
@@ -25,7 +25,7 @@ and present your final summary. Do not invoke external tools after reaching your
 """
 
 WRITER_PROMPT = """\
-You are an expert academic typesetter and TeX programmer. 
+You are an expert academic typesetter and TeX programmer.
 Your sole objective is to take the provided research summary and convert it into a perfectly formatted, \
 professional LaTeX document.
 
@@ -69,7 +69,9 @@ def load_prompt(name: str = "researcher", **kwargs: str) -> str:
         prompt = prompt_file.read_text(encoding="utf-8").strip()
     else:
         logger.info(
-            "Prompt file '%s' not found, using embedded default for '%s'", prompt_file, name
+            "Prompt file '%s' not found, using embedded default for '%s'",
+            prompt_file,
+            name,
         )
         if name == "writer":
             prompt = WRITER_PROMPT

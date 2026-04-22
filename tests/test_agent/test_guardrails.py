@@ -1,6 +1,5 @@
 """Tests for the guardrails safety module."""
 
-import pytest
 from unittest.mock import patch
 
 from ai_researcher.agent.guardrails import (

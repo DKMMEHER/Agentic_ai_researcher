@@ -1,11 +1,15 @@
 """Tests for the LaTeX renderer tool."""
 
-import pytest
-from unittest.mock import patch, MagicMock
-from pathlib import Path
+from unittest.mock import MagicMock, patch
 
-from ai_researcher.tools.latex_renderer import render_latex_pdf, _get_tectonic_command, _extract_title_slug
+import pytest
+
 from ai_researcher.exceptions import LatexRenderError
+from ai_researcher.tools.latex_renderer import (
+    _extract_title_slug,
+    _get_tectonic_command,
+    render_latex_pdf,
+)
 
 
 class TestGetTectonicCommand:
@@ -60,13 +64,17 @@ class TestExtractTitleSlug:
 class TestRenderLatexPdf:
     """Tests for LaTeX rendering."""
 
-    @patch("ai_researcher.tools.latex_renderer._get_tectonic_command", return_value="/usr/bin/tectonic")
+    @patch(
+        "ai_researcher.tools.latex_renderer._get_tectonic_command",
+        return_value="/usr/bin/tectonic",
+    )
     @patch("ai_researcher.tools.latex_renderer.subprocess.run")
     def test_successful_render(self, mock_run, mock_tectonic, tmp_path, monkeypatch):
         """Test successful LaTeX to PDF rendering."""
         monkeypatch.setenv("OUTPUT_DIR", str(tmp_path))
 
         from ai_researcher.config import get_settings
+
         get_settings.cache_clear()
 
         mock_result = MagicMock()
@@ -83,19 +91,27 @@ class TestRenderLatexPdf:
 
         mock_run.side_effect = create_pdf_side_effect
 
-        latex = r"\documentclass{article}\title{Test}\begin{document}Hello\end{document}"
+        latex = (
+            r"\documentclass{article}\title{Test}\begin{document}Hello\end{document}"
+        )
         result = render_latex_pdf.invoke({"latex_content": latex})
         assert "SUCCESS" in result
 
         get_settings.cache_clear()
 
-    @patch("ai_researcher.tools.latex_renderer._get_tectonic_command", return_value="/usr/bin/tectonic")
+    @patch(
+        "ai_researcher.tools.latex_renderer._get_tectonic_command",
+        return_value="/usr/bin/tectonic",
+    )
     @patch("ai_researcher.tools.latex_renderer.subprocess.run")
-    def test_compilation_failure_returns_error(self, mock_run, mock_tectonic, tmp_path, monkeypatch):
+    def test_compilation_failure_returns_error(
+        self, mock_run, mock_tectonic, tmp_path, monkeypatch
+    ):
         """Test that compilation errors return an error string."""
         monkeypatch.setenv("OUTPUT_DIR", str(tmp_path))
 
         from ai_researcher.config import get_settings
+
         get_settings.cache_clear()
 
         mock_result = MagicMock()
@@ -103,9 +119,7 @@ class TestRenderLatexPdf:
         mock_result.stderr = "Undefined control sequence"
         mock_run.return_value = mock_result
 
-        result = render_latex_pdf.invoke(
-            {"latex_content": r"\invalidcommand"}
-        )
+        result = render_latex_pdf.invoke({"latex_content": r"\invalidcommand"})
         assert "ERROR" in result
 
         get_settings.cache_clear()

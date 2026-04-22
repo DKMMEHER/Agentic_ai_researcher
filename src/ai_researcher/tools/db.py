@@ -10,6 +10,7 @@ logger = get_logger(__name__)
 _VECTOR_STORE = None
 _EMBEDDINGS = None
 
+
 def get_vector_store() -> Chroma:
     """Returns the singleton Chroma Vector Database initialized with Local HuggingFace embeddings."""
     global _VECTOR_STORE, _EMBEDDINGS
@@ -19,7 +20,7 @@ def get_vector_store() -> Chroma:
         _VECTOR_STORE = Chroma(
             collection_name="research_papers",
             embedding_function=_EMBEDDINGS,
-            persist_directory="./.chroma_db"
+            persist_directory="./.chroma_db",
         )
         logger.info("Vector database loaded successfully.")
     return _VECTOR_STORE

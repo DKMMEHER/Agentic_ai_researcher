@@ -8,19 +8,19 @@ Usage:
     python -m tests.eval.langsmith_evaluate_trajectory --experiment-name "v2-improved-routing"
 """
 
-import time
-import sys
 import argparse
+import sys
+import time
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
-from ai_researcher.config import get_settings
+from ai_researcher.config import get_settings  # noqa: E402
+
 get_settings()
 
-from langsmith import Client, evaluate
-
+from langsmith import Client, evaluate  # noqa: E402
 
 DATASET_NAME = "Agentic_ai_researcher_Trajectory Evaluation"
 
@@ -88,15 +88,13 @@ def agent_target(inputs: dict) -> dict:
 
 # --- EVALUATORS ---
 
+
 def step_efficiency_evaluator(run, example) -> dict:
     """Scores how close the agent's step count is to optimal."""
     optimal_steps = example.outputs["optimal_steps"]
     actual_steps = run.outputs.get("actual_steps", 0)
 
-    if actual_steps == 0:
-        score = 0.0
-    else:
-        score = min(optimal_steps / actual_steps, 1.0)
+    score = 0.0 if actual_steps == 0 else min(optimal_steps / actual_steps, 1.0)
 
     return {
         "key": "step_efficiency",
@@ -110,10 +108,7 @@ def tool_overlap_evaluator(run, example) -> dict:
     optimal = set(example.outputs["optimal_trajectory"])
     actual = set(run.outputs.get("trajectory", []))
 
-    if not optimal:
-        score = 1.0
-    else:
-        score = len(optimal & actual) / len(optimal)
+    score = 1.0 if not optimal else len(optimal & actual) / len(optimal)
 
     return {
         "key": "tool_overlap",
@@ -144,7 +139,9 @@ def wasted_calls_evaluator(run, example) -> dict:
     return {
         "key": "no_wasted_calls",
         "score": round(score, 3),
-        "comment": f"{len(wasted)} wasted call(s): {wasted}" if wasted else "No wasted calls",
+        "comment": f"{len(wasted)} wasted call(s): {wasted}"
+        if wasted
+        else "No wasted calls",
     }
 
 
@@ -174,7 +171,7 @@ def main():
     print(f"  🔬 Experiment: {args.experiment_name or '(auto-generated)'}")
     print("  ⏳ Running (this takes several minutes with rate limiting)...\n")
 
-    results = evaluate(
+    evaluate(
         agent_target,
         data=DATASET_NAME,
         evaluators=[

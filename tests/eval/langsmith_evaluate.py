@@ -8,20 +8,20 @@ Usage:
     python -m tests.eval.langsmith_evaluate --experiment-name "v2-decision-tree-prompt"
 """
 
-import time
-import sys
 import argparse
+import sys
+import time
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 # Push env vars before importing anything
-from ai_researcher.config import get_settings
+from ai_researcher.config import get_settings  # noqa: E402
+
 get_settings()
 
-from langsmith import Client, evaluate
-
+from langsmith import Client, evaluate  # noqa: E402
 
 DATASET_NAME = "Agentic_ai_researcher"
 
@@ -40,7 +40,7 @@ def create_agent():
 
 def agent_target(inputs: dict) -> dict:
     """Target function that LangSmith calls for each test case.
-    
+
     Takes a question, runs it through the agent, and returns
     the first tool the agent tries to call.
     """
@@ -71,7 +71,7 @@ def agent_target(inputs: dict) -> dict:
 
 def tool_selection_evaluator(run, example) -> dict:
     """Custom evaluator that checks if the agent selected the correct tool.
-    
+
     This function is called by LangSmith for each test case after
     the agent has produced its output. It compares actual vs expected.
     """
@@ -91,7 +91,9 @@ def tool_selection_evaluator(run, example) -> dict:
 def main():
     global _AGENT_CACHE
 
-    parser = argparse.ArgumentParser(description="Run LangSmith tool selection evaluation")
+    parser = argparse.ArgumentParser(
+        description="Run LangSmith tool selection evaluation"
+    )
     parser.add_argument(
         "--experiment-name",
         type=str,
@@ -122,7 +124,7 @@ def main():
     print("  ⏳ Running evaluation (this takes a few minutes)...\n")
 
     # Run the evaluation
-    results = evaluate(
+    evaluate(
         agent_target,
         data=DATASET_NAME,
         evaluators=[tool_selection_evaluator],

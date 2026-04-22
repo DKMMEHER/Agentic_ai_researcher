@@ -6,22 +6,21 @@ multi-agent sequence graph with tools, models, state management, and checkpointi
 
 from typing import Literal
 
-from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
+from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.runnables import RunnableConfig
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_groq import ChatGroq
-from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.prebuilt import ToolNode
 
-from ai_researcher.agent.prompts import load_prompt
-from ai_researcher.agent.state import AgentState
 from ai_researcher.agent.guardrails import (
     MAX_RESEARCHER_ITERATIONS,
     MAX_WRITER_ITERATIONS,
     log_iteration_limit_reached,
 )
+from ai_researcher.agent.prompts import load_prompt
+from ai_researcher.agent.state import AgentState
 from ai_researcher.agent.supervisor import _call_supervisor
 from ai_researcher.config import Settings, get_settings
 from ai_researcher.logging import get_logger
@@ -87,7 +86,7 @@ async def _call_researcher(state: AgentState, config: RunnableConfig) -> dict:
     sys_msg = SystemMessage(content=load_prompt("researcher"))
 
     filtered_messages = _filter_system_messages(state.get("messages", []))
-    response = await model.ainvoke([sys_msg] + filtered_messages)
+    response = await model.ainvoke([sys_msg, *filtered_messages])
 
     iters = state.get("researcher_iterations", 0) + 1
     return {
@@ -104,7 +103,7 @@ async def _call_writer(state: AgentState, config: RunnableConfig) -> dict:
     sys_msg = SystemMessage(content=load_prompt("writer"))
 
     filtered_messages = _filter_system_messages(state.get("messages", []))
-    response = await model.ainvoke([sys_msg] + filtered_messages)
+    response = await model.ainvoke([sys_msg, *filtered_messages])
 
     iters = state.get("writer_iterations", 0) + 1
     return {
@@ -122,13 +121,19 @@ def _should_continue_supervisor(state: AgentState) -> Literal["researcher", "__e
     return "researcher"
 
 
-def _should_continue_researcher(state: AgentState) -> Literal["researcher_tools", "guardrail_handler", "human_review", "__end__"]:
+def _should_continue_researcher(
+    state: AgentState,
+) -> Literal["researcher_tools", "guardrail_handler", "human_review", "__end__"]:
     """Edge function: decide whether researcher routes to tools or to human review."""
     last_message = state["messages"][-1]
 
-    if hasattr(last_message, "tool_calls") and getattr(last_message, "tool_calls", None):
+    if hasattr(last_message, "tool_calls") and getattr(
+        last_message, "tool_calls", None
+    ):
         if state.get("researcher_iterations", 0) >= MAX_RESEARCHER_ITERATIONS:
-            log_iteration_limit_reached("researcher", state.get("researcher_iterations", 0))
+            log_iteration_limit_reached(
+                "researcher", state.get("researcher_iterations", 0)
+            )
             return "guardrail_handler"
         return "researcher_tools"
 
@@ -166,7 +171,9 @@ def _human_review(state: AgentState) -> dict:
     return {"current_agent": "writer"}
 
 
-def _route_after_review(state: AgentState) -> Literal["writer", "researcher", "__end__"]:
+def _route_after_review(
+    state: AgentState,
+) -> Literal["writer", "researcher", "__end__"]:
     """Edge function: route based on human review decision."""
     current = state.get("current_agent", "writer")
     if current == "researcher":
@@ -176,11 +183,15 @@ def _route_after_review(state: AgentState) -> Literal["writer", "researcher", "_
     return "writer"
 
 
-def _should_continue_writer(state: AgentState) -> Literal["writer_tools", "guardrail_handler", "__end__"]:
+def _should_continue_writer(
+    state: AgentState,
+) -> Literal["writer_tools", "guardrail_handler", "__end__"]:
     """Edge function: decide whether writer routes to tools or ends."""
     last_message = state["messages"][-1]
 
-    if hasattr(last_message, "tool_calls") and getattr(last_message, "tool_calls", None):
+    if hasattr(last_message, "tool_calls") and getattr(
+        last_message, "tool_calls", None
+    ):
         if state.get("writer_iterations", 0) >= MAX_WRITER_ITERATIONS:
             log_iteration_limit_reached("writer", state.get("writer_iterations", 0))
             return "guardrail_handler"
@@ -193,15 +204,17 @@ async def _guardrail_handler(state: AgentState) -> dict:
     """Node function: injects a visible system message when guardrails are triggered."""
     agent = state.get("current_agent", "unknown")
     iters = state.get(f"{agent}_iterations", 0)
-    
+
     # Check if there was a technical error in the last message
     last_msg = state["messages"][-1]
     error_context = ""
     if hasattr(last_msg, "content") and "ERROR:" in str(last_msg.content):
         error_context = f"\n\nLast reported error:\n{last_msg.content}"
-    
-    limit = MAX_RESEARCHER_ITERATIONS if agent == "researcher" else MAX_WRITER_ITERATIONS
-    
+
+    limit = (
+        MAX_RESEARCHER_ITERATIONS if agent == "researcher" else MAX_WRITER_ITERATIONS
+    )
+
     msg = SystemMessage(
         content=(
             f"🛡️ **GUARDRAIL TRIGGERED**: The {agent.capitalize()} reached its "
@@ -235,7 +248,7 @@ def build_graph(
         thread_id = settings.thread_id
 
     # Create models and tools
-    researcher_model, writer_model = _create_models(settings)
+    _researcher_model, _writer_model = _create_models(settings)
 
     researcher_tools_node = ToolNode(get_researcher_tools())
     writer_tools_node = ToolNode(get_writer_tools())
@@ -268,11 +281,11 @@ def build_graph(
     # Use provided checkpointer or fall back to the configured default (SQLite)
     if checkpointer is None:
         from ai_researcher.agent.checkpointer import get_checkpointer
+
         checkpointer = get_checkpointer(
-            backend=settings.checkpoint_backend,
-            db_url=settings.checkpoint_db_url
+            backend=settings.checkpoint_backend, db_url=settings.checkpoint_db_url
         )
-        
+
     graph = workflow.compile(
         checkpointer=checkpointer,
         interrupt_before=["human_review"],

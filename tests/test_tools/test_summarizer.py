@@ -1,7 +1,6 @@
 """Tests for the Map-Reduce Summarizer tool."""
 
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 from ai_researcher.tools.summarizer import summarize_long_document
 
@@ -12,21 +11,31 @@ class TestSummarizeLongDocument:
     @patch("ai_researcher.tools.summarizer.load_summarize_chain")
     @patch("ai_researcher.tools.summarizer.ChatGoogleGenerativeAI")
     @patch("ai_researcher.tools.summarizer.get_vector_store")
-    def test_successful_summarization(self, mock_get_store, mock_llm, mock_chain_loader):
+    def test_successful_summarization(
+        self, mock_get_store, mock_llm, mock_chain_loader
+    ):
         """Test successful map-reduce summarization."""
         from langchain_core.documents import Document
 
         # Mock the vector store to return some docs
         mock_store = MagicMock()
         mock_store.similarity_search.return_value = [
-            Document(page_content="This paper discusses transformers.", metadata={"source": "http://example.com/paper.pdf"}),
-            Document(page_content="Self-attention is the key mechanism.", metadata={"source": "http://example.com/paper.pdf"}),
+            Document(
+                page_content="This paper discusses transformers.",
+                metadata={"source": "http://example.com/paper.pdf"},
+            ),
+            Document(
+                page_content="Self-attention is the key mechanism.",
+                metadata={"source": "http://example.com/paper.pdf"},
+            ),
         ]
         mock_get_store.return_value = mock_store
 
         # Mock the chain to return a summary
         mock_chain = MagicMock()
-        mock_chain.invoke.return_value = {"output_text": "This is a summary of the paper."}
+        mock_chain.invoke.return_value = {
+            "output_text": "This is a summary of the paper."
+        }
         mock_chain_loader.return_value = mock_chain
 
         result = summarize_long_document.invoke({"url": "http://example.com/paper.pdf"})
@@ -41,7 +50,9 @@ class TestSummarizeLongDocument:
         mock_store.similarity_search.return_value = []
         mock_get_store.return_value = mock_store
 
-        result = summarize_long_document.invoke({"url": "http://example.com/missing.pdf"})
+        result = summarize_long_document.invoke(
+            {"url": "http://example.com/missing.pdf"}
+        )
 
         assert "Error" in result
         assert "read_pdf" in result

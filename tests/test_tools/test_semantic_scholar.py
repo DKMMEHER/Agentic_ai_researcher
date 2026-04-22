@@ -1,14 +1,17 @@
 """Tests for the Semantic Scholar search tool."""
 
 import json
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
+
 from ai_researcher.tools.semantic_scholar import (
-    semantic_scholar_search, 
-    semantic_scholar_citations, 
+    SemanticScholarError,
+    semantic_scholar_citations,
     semantic_scholar_references,
-    SemanticScholarError
+    semantic_scholar_search,
 )
+
 
 @pytest.fixture
 def sample_semantic_scholar_json():
@@ -27,11 +30,12 @@ def sample_semantic_scholar_json():
                 "influentialCitationCount": 300,
                 "authors": [
                     {"authorId": "1", "name": "Jared Kaplan"},
-                    {"authorId": "2", "name": "Sam McCandlish"}
-                ]
+                    {"authorId": "2", "name": "Sam McCandlish"},
+                ],
             }
-        ]
+        ],
     }
+
 
 @pytest.fixture
 def sample_citations_json():
@@ -43,11 +47,12 @@ def sample_citations_json():
                 "citingPaper": {
                     "paperId": "cite123",
                     "title": "A newer paper",
-                    "year": 2023
+                    "year": 2023,
                 }
             }
-        ]
+        ],
     }
+
 
 @pytest.fixture
 def sample_references_json():
@@ -59,10 +64,10 @@ def sample_references_json():
                 "citedPaper": {
                     "paperId": "ref123",
                     "title": "An older paper",
-                    "year": 2010
+                    "year": 2010,
                 }
             }
-        ]
+        ],
     }
 
 
@@ -103,6 +108,7 @@ class TestSemanticScholarSearch:
     def test_http_error_raises(self, mock_get):
         """Test that HTTP failures raise SemanticScholarError."""
         import requests
+
         mock_get.side_effect = requests.RequestException("API Offline")
 
         with pytest.raises(SemanticScholarError) as excinfo:
@@ -135,6 +141,7 @@ class TestSemanticScholarCitations:
     @patch("ai_researcher.tools.semantic_scholar.requests.get")
     def test_404_error(self, mock_get):
         import requests
+
         mock_resp = MagicMock()
         mock_resp.status_code = 404
         mock_get.side_effect = requests.RequestException(response=mock_resp)
@@ -168,6 +175,7 @@ class TestSemanticScholarReferences:
     @patch("ai_researcher.tools.semantic_scholar.requests.get")
     def test_generic_error(self, mock_get):
         import requests
+
         mock_get.side_effect = requests.RequestException("Timeout")
 
         result = semantic_scholar_references.invoke({"paper_id": "test-id"})

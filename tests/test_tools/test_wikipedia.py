@@ -1,7 +1,7 @@
 """Tests for the Wikipedia search tool."""
 
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
+
 import wikipedia
 
 from ai_researcher.tools.wikipedia_tool import wikipedia_search
@@ -13,7 +13,11 @@ class TestWikipediaSearch:
     @patch("ai_researcher.tools.wikipedia_tool.wikipedia")
     def test_successful_search(self, mock_wikipedia):
         """Test successful Wikipedia search returns a summary."""
-        mock_wikipedia.search.return_value = ["Transformer (machine learning)", "Transformer", "Autobot"]
+        mock_wikipedia.search.return_value = [
+            "Transformer (machine learning)",
+            "Transformer",
+            "Autobot",
+        ]
         mock_wikipedia.summary.return_value = (
             "A transformer is a deep learning model architecture. "
             "It was introduced in 2017 by researchers at Google."
@@ -36,12 +40,16 @@ class TestWikipediaSearch:
 
     def test_disambiguation_error(self):
         """Test handling of ambiguous search terms."""
-        with patch("ai_researcher.tools.wikipedia_tool.wikipedia.search") as mock_search, \
-             patch("ai_researcher.tools.wikipedia_tool.wikipedia.summary") as mock_summary:
-            
+        with (
+            patch("ai_researcher.tools.wikipedia_tool.wikipedia.search") as mock_search,
+            patch(
+                "ai_researcher.tools.wikipedia_tool.wikipedia.summary"
+            ) as mock_summary,
+        ):
             mock_search.return_value = ["Mercury"]
             mock_summary.side_effect = wikipedia.exceptions.DisambiguationError(
-                "Mercury", ["Mercury (planet)", "Mercury (element)", "Mercury (mythology)"]
+                "Mercury",
+                ["Mercury (planet)", "Mercury (element)", "Mercury (mythology)"],
             )
 
             result = wikipedia_search.invoke({"query": "Mercury"})
@@ -49,13 +57,14 @@ class TestWikipediaSearch:
 
     def test_page_error(self):
         """Test handling when a specific page cannot be fetched."""
-        with patch("ai_researcher.tools.wikipedia_tool.wikipedia.search") as mock_search, \
-             patch("ai_researcher.tools.wikipedia_tool.wikipedia.summary") as mock_summary:
-            
+        with (
+            patch("ai_researcher.tools.wikipedia_tool.wikipedia.search") as mock_search,
+            patch(
+                "ai_researcher.tools.wikipedia_tool.wikipedia.summary"
+            ) as mock_summary,
+        ):
             mock_search.return_value = ["SomePageThatDoesNotExist"]
-            mock_summary.side_effect = wikipedia.exceptions.PageError(
-                pageid="12345"
-            )
+            mock_summary.side_effect = wikipedia.exceptions.PageError(pageid="12345")
 
             result = wikipedia_search.invoke({"query": "nonexistent page"})
             # In wikipedia_tool.py: return f"Could not fetch the specific page for '{query}'."
@@ -65,6 +74,7 @@ class TestWikipediaSearch:
     def test_network_error(self, mock_wikipedia):
         """Test handling of network failures."""
         from requests.exceptions import RequestException
+
         mock_wikipedia.search.side_effect = RequestException("Connection refused")
 
         result = wikipedia_search.invoke({"query": "transformers"})

@@ -15,6 +15,7 @@ from langchain_core.messages import AIMessage
 # Helper: build a mock AIMessage that looks like a tool-call response
 # ---------------------------------------------------------------------------
 
+
 def make_tool_call_message(
     tool_name: str,
     tool_args: dict | None = None,
@@ -47,6 +48,7 @@ def make_plain_message(content: str) -> AIMessage:
 # Fixture: ephemeral in-memory ChromaDB (no disk I/O)
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture()
 def ephemeral_chroma():
     """Patch the singleton vector store with an ephemeral in-memory Chroma.
@@ -67,15 +69,18 @@ def ephemeral_chroma():
         embedding_function=embeddings,
     )
 
-    with patch("ai_researcher.tools.db._VECTOR_STORE", store), \
-         patch("ai_researcher.tools.db._EMBEDDINGS", embeddings), \
-         patch("ai_researcher.tools.db.get_vector_store", return_value=store):
+    with (
+        patch("ai_researcher.tools.db._VECTOR_STORE", store),
+        patch("ai_researcher.tools.db._EMBEDDINGS", embeddings),
+        patch("ai_researcher.tools.db.get_vector_store", return_value=store),
+    ):
         yield store
 
 
 # ---------------------------------------------------------------------------
 # Fixture: mock LLM factory
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture()
 def mock_llm_factory():
@@ -103,13 +108,14 @@ def mock_llm_factory():
 # Fixture: build a fresh graph with a mocked LLM
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture()
 def build_e2e_graph(mock_llm_factory):
     """Build a real LangGraph agent graph with a mocked LLM.
 
     Returns a factory callable:
         graph, config = build_e2e_graph(responses=[...])
-    
+
     Mocks both ChatGroq and ChatGoogleGenerativeAI so the graph works
     regardless of which MODEL_NAME is configured.
     """
@@ -121,10 +127,18 @@ def build_e2e_graph(mock_llm_factory):
         mock_model = mock_llm_factory(responses)
 
         # Patch both for safety, but Gemini is now primary
-        with patch("ai_researcher.agent.graph.ChatGoogleGenerativeAI", return_value=mock_model), \
-             patch("ai_researcher.agent.supervisor.ChatGoogleGenerativeAI", return_value=mock_model), \
-             patch("ai_researcher.agent.graph.ChatGroq", return_value=mock_model), \
-             patch("ai_researcher.agent.supervisor.ChatGroq", return_value=mock_model):
+        with (
+            patch(
+                "ai_researcher.agent.graph.ChatGoogleGenerativeAI",
+                return_value=mock_model,
+            ),
+            patch(
+                "ai_researcher.agent.supervisor.ChatGoogleGenerativeAI",
+                return_value=mock_model,
+            ),
+            patch("ai_researcher.agent.graph.ChatGroq", return_value=mock_model),
+            patch("ai_researcher.agent.supervisor.ChatGroq", return_value=mock_model),
+        ):
             from ai_researcher.agent.graph import build_graph
 
             graph, config = build_graph(thread_id=thread_id)

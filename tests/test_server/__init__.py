@@ -1,7 +1,8 @@
 """Tests for the FastAPI server endpoints."""
 
+from unittest.mock import AsyncMock, MagicMock, patch  # noqa: F401
+
 import pytest
-from unittest.mock import patch, MagicMock, AsyncMock
 from fastapi.testclient import TestClient
 
 
@@ -14,7 +15,7 @@ def test_client():
 
     # Inject a MemorySaver into app state before testing
     app.state.checkpointer = MemorySaver()
-    
+
     client = TestClient(app, raise_server_exceptions=False)
     yield client
 

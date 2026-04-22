@@ -1,7 +1,6 @@
 """Tests for the Google Scholar search tool."""
 
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 from ai_researcher.tools.google_scholar import google_scholar_search
 
@@ -55,6 +54,7 @@ class TestGoogleScholarSearch:
     def test_api_error(self, mock_post):
         """Test handling of HTTP errors."""
         from requests.exceptions import RequestException
+
         mock_post.side_effect = RequestException("Connection refused")
 
         result = google_scholar_search.invoke({"query": "transformers"})

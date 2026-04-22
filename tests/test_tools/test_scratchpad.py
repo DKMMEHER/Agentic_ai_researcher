@@ -1,7 +1,5 @@
 """Tests for the Scratchpad note-taking tool."""
 
-import pytest
-
 from ai_researcher.tools.scratchpad import save_research_note
 
 
@@ -10,7 +8,9 @@ class TestSaveResearchNote:
 
     def test_saves_note_returns_confirmation(self):
         """Test that saving a note returns a success message."""
-        result = save_research_note.invoke({"note": "Transformers use self-attention for sequence modeling."})
+        result = save_research_note.invoke(
+            {"note": "Transformers use self-attention for sequence modeling."}
+        )
         assert "successfully saved" in result.lower()
 
     def test_saves_long_note(self):

@@ -15,12 +15,10 @@ class ArxivPaper(BaseModel):
     categories: list[str] = Field(
         default_factory=list, description="arXiv category tags"
     )
-    pdf_url: str | None = Field(
-        default=None, description="Direct URL to the PDF"
-    )
+    pdf_url: str | None = Field(default=None, description="Direct URL to the PDF")
 
     class Config:
-        json_schema_extra = {
+        json_schema_extra = {  # noqa: RUF012
             "example": {
                 "title": "Attention Is All You Need",
                 "summary": "The dominant sequence transduction models...",

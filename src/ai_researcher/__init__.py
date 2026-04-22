@@ -14,7 +14,7 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 warnings.filterwarnings("ignore", message=".*Accessing `__path__`.*")
 
-from ai_researcher.config import get_settings
-from ai_researcher.agent.graph import build_graph
+from ai_researcher.agent.graph import build_graph  # noqa: E402
+from ai_researcher.config import get_settings  # noqa: E402
 
-__all__ = ["get_settings", "build_graph", "__version__"]
+__all__ = ["__version__", "build_graph", "get_settings"]

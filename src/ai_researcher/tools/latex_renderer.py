@@ -18,7 +18,7 @@ def _extract_title_slug(latex_content: str) -> str:
 
     Falls back to 'research_paper' if no title is found.
     """
-    # Extract the title. We use a more robust regex that looks for the closing bracket 
+    # Extract the title. We use a more robust regex that looks for the closing bracket
     # while allowing for one level of nested braces (common for \textbf{\textit{...}})
     match = re.search(r"\\title\{((?:[^{}]|\{[^{}]*\})+)\}", latex_content)
     if match:
@@ -36,7 +36,7 @@ def _get_tectonic_command() -> str:
 
     Returns:
         The command name or path to tectonic.
-    
+
     Raises:
         LatexRenderError: If tectonic is not found.
     """
@@ -44,12 +44,12 @@ def _get_tectonic_command() -> str:
     local_tectonic = Path("tectonic.exe")
     if local_tectonic.exists():
         return str(local_tectonic.resolve())
-    
+
     # Check system PATH
     sys_tectonic = shutil.which("tectonic")
     if sys_tectonic:
         return sys_tectonic
-        
+
     raise LatexRenderError(
         message=(
             "tectonic is not installed or not on PATH. "
@@ -74,9 +74,9 @@ def render_latex_pdf(latex_content: str) -> str:
     # Auto-fix: Sometimes the AI double-escapes backslashes in JSON (e.g. \\documentclass)
     # This regex cleans up known structural macros to prevent "There's no line here to end" errors.
     latex_content = re.sub(
-        r'\\\\(documentclass|usepackage|begin|end|section|subsection|item|url|textbf|textit|title|author|date|maketitle|abstract)',
-        r'\\\1',
-        latex_content
+        r"\\\\(documentclass|usepackage|begin|end|section|subsection|item|url|textbf|textit|title|author|date|maketitle|abstract)",
+        r"\\\1",
+        latex_content,
     )
 
     tectonic_cmd = _get_tectonic_command()

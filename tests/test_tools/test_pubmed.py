@@ -1,18 +1,18 @@
 """Tests for the PubMed search tool."""
 
 import json
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
-from ai_researcher.tools.pubmed import pubmed_search, PubMedSearchError
+
+from ai_researcher.tools.pubmed import PubMedSearchError, pubmed_search
+
 
 @pytest.fixture
 def sample_pubmed_search_json():
     """Sample PubMed ESearch JSON response."""
-    return {
-        "esearchresult": {
-            "idlist": ["12345", "67890"]
-        }
-    }
+    return {"esearchresult": {"idlist": ["12345", "67890"]}}
+
 
 @pytest.fixture
 def sample_pubmed_fetch_xml():
@@ -41,11 +41,14 @@ def sample_pubmed_fetch_xml():
   </PubmedArticle>
 </PubmedArticleSet>"""
 
+
 class TestPubMedSearch:
     """Tests for PubMed search integrated tool functionality."""
 
     @patch("ai_researcher.tools.pubmed.requests.get")
-    def test_successful_search(self, mock_get, sample_pubmed_search_json, sample_pubmed_fetch_xml):
+    def test_successful_search(
+        self, mock_get, sample_pubmed_search_json, sample_pubmed_fetch_xml
+    ):
         """Test a complete successful PubMed search and fetch cycle."""
         # Setup mocks for two consecutive requests.get calls
         mock_search_resp = MagicMock()
@@ -55,7 +58,7 @@ class TestPubMedSearch:
 
         mock_fetch_resp = MagicMock()
         mock_fetch_resp.ok = True
-        mock_fetch_resp.content = sample_pubmed_fetch_xml.encode('utf-8')
+        mock_fetch_resp.content = sample_pubmed_fetch_xml.encode("utf-8")
         mock_fetch_resp.raise_for_status = MagicMock()
 
         mock_get.side_effect = [mock_search_resp, mock_fetch_resp]
@@ -84,6 +87,7 @@ class TestPubMedSearch:
     def test_http_error_raises(self, mock_get):
         """Test that HTTP failures raise PubMedSearchError."""
         import requests
+
         mock_get.side_effect = requests.RequestException("Network Failure")
 
         with pytest.raises(PubMedSearchError) as excinfo:

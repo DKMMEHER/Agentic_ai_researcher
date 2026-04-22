@@ -46,9 +46,7 @@ class PDFReadError(ToolError):
 class LatexRenderError(ToolError):
     """Raised when LaTeX rendering to PDF fails."""
 
-    def __init__(
-        self, message: str = "", tex_file: str = "", *args, **kwargs
-    ):
+    def __init__(self, message: str = "", tex_file: str = "", *args, **kwargs):
         self.tex_file = tex_file
         super().__init__(message, *args, **kwargs)
 
@@ -56,7 +54,9 @@ class LatexRenderError(ToolError):
 class WebSearchError(ToolError):
     """Raised when a web search (DuckDuckGo or Tavily) fails."""
 
-    def __init__(self, message: str = "", query: str = "", engine: str = "", *args, **kwargs):
+    def __init__(
+        self, message: str = "", query: str = "", engine: str = "", *args, **kwargs
+    ):
         self.query = query
         self.engine = engine
         super().__init__(message, *args, **kwargs)

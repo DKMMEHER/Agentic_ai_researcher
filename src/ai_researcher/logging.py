@@ -5,13 +5,11 @@ Call `setup_logging()` once at application startup to configure all loggers.
 
 import logging
 import logging.config
-import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 
-def setup_logging(level: Optional[str] = None) -> None:
+def setup_logging(level: str | None = None) -> None:
     """Configure structured logging for the entire application.
 
     Args:
@@ -27,7 +25,7 @@ def setup_logging(level: Optional[str] = None) -> None:
     project_root = Path(__file__).resolve().parent.parent.parent
     logs_dir = project_root / "logs"
     logs_dir.mkdir(exist_ok=True)
-    
+
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     log_file_path = str(logs_dir / f"ai_researcher_{timestamp}.log")
 

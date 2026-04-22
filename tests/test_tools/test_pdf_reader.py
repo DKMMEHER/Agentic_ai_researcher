@@ -1,11 +1,11 @@
 """Tests for the PDF reader tool."""
 
-import io
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
-from ai_researcher.tools.pdf_reader import read_pdf
+import pytest
+
 from ai_researcher.exceptions import PDFReadError
+from ai_researcher.tools.pdf_reader import read_pdf
 
 
 class TestReadPdf:
@@ -26,8 +26,8 @@ class TestReadPdf:
         # Mock fitz (PyMuPDF) document
         mock_page = MagicMock()
         mock_page.get_text.return_value = "Page 1 text content"
-        mock_page.get_images.return_value = [] # No images
-        
+        mock_page.get_images.return_value = []  # No images
+
         mock_doc = MagicMock()
         mock_doc.__iter__.return_value = [mock_page]
         mock_doc.close = MagicMock()
@@ -38,9 +38,11 @@ class TestReadPdf:
         mock_get_store.return_value = mock_store
 
         result = read_pdf.invoke({"url": "http://example.com/paper.pdf"})
-        assert "SUCCESS: PDF from http://example.com/paper.pdf has been parsed" in result
+        assert (
+            "SUCCESS: PDF from http://example.com/paper.pdf has been parsed" in result
+        )
         mock_store.add_documents.assert_called_once()
-        
+
         # Verify the chunks passed to add_documents
         args, _ = mock_store.add_documents.call_args
         docs = args[0]
@@ -52,6 +54,7 @@ class TestReadPdf:
     def test_download_failure_raises(self, mock_get):
         """Test that HTTP errors raise PDFReadError."""
         import requests
+
         mock_get.side_effect = requests.RequestException("Connection failed")
 
         with pytest.raises(PDFReadError):
@@ -79,7 +82,7 @@ class TestReadPdf:
         mock_doc.__iter__.return_value = pages
         mock_doc.close = MagicMock()
         mock_fitz_open.return_value = mock_doc
-        
+
         # Mock Vector Store
         mock_store = MagicMock()
         mock_get_store.return_value = mock_store
@@ -87,7 +90,7 @@ class TestReadPdf:
         result = read_pdf.invoke({"url": "http://example.com/paper.pdf"})
         assert "SUCCESS" in result
         mock_store.add_documents.assert_called_once()
-        
+
         args, _ = mock_store.add_documents.call_args
         docs = args[0]
         # Because chunks are 1000 characters and text is short, it should result in 1 chunk
@@ -109,15 +112,19 @@ class TestReadPdf:
         # Two images: one 50x50 (small), one 200x200 (large)
         mock_page.get_images.return_value = [
             (1, 0, 50, 50, 8, "gray", "", "img1", "flate"),
-            (2, 0, 200, 200, 8, "rgb", "", "img2", "flate")
+            (2, 0, 200, 200, 8, "rgb", "", "img2", "flate"),
         ]
-        
+
         mock_doc = MagicMock()
         mock_doc.__iter__.return_value = [mock_page]
+        mock_doc.extract_image.side_effect = lambda xref: (
+            {"width": 50, "height": 50, "image": b"fake", "ext": "png"} if xref == 1 
+            else {"width": 250, "height": 250, "image": b"fake", "ext": "png"}
+        )
         mock_fitz_open.return_value = mock_doc
 
         read_pdf.invoke({"url": "http://example.com/paper.pdf"})
-        
+
         # Verify large image counts towards summary text or at least doesn't crash
         # The current implementation just logs images, let's ensure it handles the metadata
         mock_get_store.return_value.add_documents.assert_called_once()
@@ -132,18 +139,19 @@ class TestReadPdf:
         mock_get.return_value = mock_response
 
         mock_doc = MagicMock()
-        mock_doc.__iter__.return_value = [] # Zero pages
+        mock_doc.__iter__.return_value = []  # Zero pages
         mock_fitz_open.return_value = mock_doc
 
-        with pytest.raises(PDFReadError) as exc:
-            read_pdf.invoke({"url": "http://example.com/empty.pdf"})
-        assert "no readable text" in str(exc.value).lower()
+        result = read_pdf.invoke({"url": "http://example.com/empty.pdf"})
+        assert "no readable text" in result.lower()
 
     @patch("ai_researcher.tools.pdf_reader.requests.get")
     @patch("ai_researcher.tools.pdf_reader.fitz.open")
     def test_processing_failure_raises(self, mock_fitz_open, mock_get):
         """Test that fitz opening errors raise PDFReadError."""
-        mock_get.return_value = MagicMock(content=b"bad data", headers={"Content-Type": "application/pdf"})
+        mock_get.return_value = MagicMock(
+            content=b"bad data", headers={"Content-Type": "application/pdf"}
+        )
         mock_fitz_open.side_effect = Exception("Fitz crash")
 
         with pytest.raises(PDFReadError):

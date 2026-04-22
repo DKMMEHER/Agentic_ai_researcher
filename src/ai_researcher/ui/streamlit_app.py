@@ -13,7 +13,10 @@ import uuid
 from pathlib import Path
 
 import streamlit as st
-from langchain_core.messages import AIMessage, ToolMessage, AIMessageChunk, SystemMessage
+from langchain_core.messages import (
+    AIMessage,
+    ToolMessage,
+)
 from langsmith import Client
 from streamlit_feedback import streamlit_feedback
 
@@ -33,8 +36,8 @@ def _initialize_agent():
         st.session_state.session_id = str(uuid.uuid4())
 
     if "client" not in st.session_state:
-        from ai_researcher.ui.client import ResearchClient
         from ai_researcher.logging import setup_logging
+        from ai_researcher.ui.client import ResearchClient
 
         setup_logging()
 
@@ -48,20 +51,22 @@ def _scan_for_pdfs(message_content) -> None:
     """Helper to detect and register PDF files found in message content."""
     if not message_content:
         return
-        
+
     content_str = str(message_content)
-    
+
     # Direct cleanup check (handles if the string IS the path, potentially with quotes/newlines)
-    clean_path = content_str.strip('\'" \n\r\t')
-    if clean_path.endswith(".pdf") and Path(clean_path).exists():
+    clean_path = content_str.strip("'\" \n\r\t")
+    if clean_path.endswith(".pdf") and Path(clean_path).exists():  # noqa: SIM102
         if clean_path not in st.session_state.pdf_paths:
             st.session_state.pdf_paths.append(clean_path)
-            
+
     # Regex check to extract paths embedded within regular text/responses
     # Matches Windows (C:\...) and Unix (/...) style absolute paths without spaces
-    matches = re.findall(r'([A-Za-z]:\\[^\s*<>\|]+?\.pdf|/[^\s*<>\|]+?\.pdf)', content_str)
+    matches = re.findall(
+        r"([A-Za-z]:\\[^\s*<>\|]+?\.pdf|/[^\s*<>\|]+?\.pdf)", content_str
+    )
     for match in matches:
-        clean_match = match.strip('\'" \n\r\t.,')
+        clean_match = match.strip("'\" \n\r\t.,")
         if Path(clean_match).exists() and clean_match not in st.session_state.pdf_paths:
             st.session_state.pdf_paths.append(clean_match)
 
@@ -84,7 +89,7 @@ def _submit_feedback(feedback, run_id):
                 run_id=run_id_str,
                 key="user_satisfaction",
                 score=score,
-                comment=feedback.get("text", "")
+                comment=feedback.get("text", ""),
             )
             st.toast("Feedback submitted! Thank you.", icon="✅")
         except Exception as e:
@@ -136,12 +141,14 @@ def _render_sidebar():
             cost_in = (in_t / 1_000_000) * 0.075
             cost_out = (out_t / 1_000_000) * 0.30
             total_cost_usd = cost_in + cost_out
-            total_cost_inr = total_cost_usd * 83.50  # Conversion rate: 1 USD = 83.50 INR
+            total_cost_inr = (
+                total_cost_usd * 83.50
+            )  # Conversion rate: 1 USD = 83.50 INR
 
             st.metric(label="Input Tokens", value=f"{in_t:,}")
             st.metric(label="Output Tokens", value=f"{out_t:,}")
             st.metric(label="Est. Cost (Gemini)", value=f"₹{total_cost_inr:.4f}")
-            
+
             st.markdown("**🔧 Tools Invoked:**")
             if not st.session_state.tool_counts:
                 st.caption("No tools invoked yet.")
@@ -159,7 +166,9 @@ def _render_sidebar():
             st.session_state.pop("revision_instructions", None)
             # Optionally rotate the thread ID to completely reset agent memory
             st.session_state.session_id = str(uuid.uuid4())
-            st.session_state.config["configurable"]["thread_id"] = st.session_state.session_id
+            st.session_state.config["configurable"]["thread_id"] = (
+                st.session_state.session_id
+            )
             st.rerun()
 
         # Show generated PDFs
@@ -206,7 +215,7 @@ def _render_chat_history():
                 optional_text_label="[Optional] Why did you give this rating?",
                 key=f"fb_{msg['run_id']}_{idx}",
                 on_submit=_submit_feedback,
-                kwargs={"run_id": msg["run_id"]}
+                kwargs={"run_id": msg["run_id"]},
             )
 
 
@@ -274,7 +283,7 @@ def _resume_graph():
 
     client = st.session_state.client
     thread_id = st.session_state.session_id
-    
+
     # Record current PDF count to detect if a new one is generated
     initial_pdf_count = len(st.session_state.pdf_paths)
 
@@ -288,13 +297,19 @@ def _resume_graph():
     if decision == "abort":
         st.session_state.awaiting_approval = False
         st.session_state.chat_history.append(
-            {"role": "assistant", "content": "🛑 Research aborted by user.", "run_id": None}
+            {
+                "role": "assistant",
+                "content": "🛑 Research aborted by user.",
+                "run_id": None,
+            }
         )
         st.rerun()
         return
 
     spinner_text = (
-        "Initializing Writer Agent..." if decision == "approved" else "Initializing Researcher Agent..."
+        "Initializing Writer Agent..."
+        if decision == "approved"
+        else "Initializing Researcher Agent..."
     )
     with st.chat_message("assistant", avatar="🤖"):
         status_container = st.status(spinner_text, expanded=True)
@@ -303,6 +318,7 @@ def _resume_graph():
         response_placeholder = st.empty()
 
         try:
+
             async def _run_stream():
                 nonlocal full_response, run_id
                 async for event in client.stream_research(thread_id):
@@ -320,26 +336,36 @@ def _resume_graph():
                         agent_name = data.get("agent", "researcher")
                         status_label = f"🟢 {agent_name.capitalize()}: Working..."
                         status_container.update(label=status_label, state="running")
-                        
+
                         if "tool_calls" in data:
                             for tc in data["tool_calls"]:
-                                status_container.markdown(f"**🔧 Executing tool:** `{tc}`")
-                        
+                                status_container.markdown(
+                                    f"**🔧 Executing tool:** `{tc}`"
+                                )
+
                         if data.get("interrupt") == "human_review":
                             st.session_state.awaiting_approval = True
                     elif event_type == "telemetry":
-                        st.session_state.total_input_tokens += data.get("input_tokens", 0)
-                        st.session_state.total_output_tokens += data.get("output_tokens", 0)
+                        st.session_state.total_input_tokens += data.get(
+                            "input_tokens", 0
+                        )
+                        st.session_state.total_output_tokens += data.get(
+                            "output_tokens", 0
+                        )
                     elif event_type == "tool_calls":
                         for tc_name in data.get("tools", []):
-                            st.session_state.tool_counts[tc_name] = st.session_state.tool_counts.get(tc_name, 0) + 1
+                            st.session_state.tool_counts[tc_name] = (
+                                st.session_state.tool_counts.get(tc_name, 0) + 1
+                            )
                     elif event_type == "error":
                         status_container.error(f"Backend Error: {data}")
-                
+
             asyncio.run(_run_stream())
             response_placeholder.markdown(full_response)
             _scan_for_pdfs(full_response)
-            status_container.update(label="✅ Task Complete", state="complete", expanded=False)
+            status_container.update(
+                label="✅ Task Complete", state="complete", expanded=False
+            )
 
         except Exception as e:
             st.error(f"❌ An error occurred during streaming: {e}")
@@ -347,7 +373,7 @@ def _resume_graph():
 
             # FALLBACK: If no streaming chunks were received, pull the last message from the final state
             if not full_response:
-                state_snapshot = graph.get_state(config)
+                state_snapshot = graph.get_state(config)  # noqa: F821
                 if state_snapshot.values and "messages" in state_snapshot.values:
                     last_msg = state_snapshot.values["messages"][-1]
                     if isinstance(last_msg, AIMessage) and last_msg.content:
@@ -356,9 +382,11 @@ def _resume_graph():
 
             # Final safety scan on the entire accumulated text
             _scan_for_pdfs(full_response)
-            status_container.update(label="✅ Task Complete", state="complete", expanded=False)
+            status_container.update(
+                label="✅ Task Complete", state="complete", expanded=False
+            )
 
-        except Exception as e:
+        except Exception as e:  # noqa: B025
             st.error(f"❌ An error occurred: {e}")
             full_response = f"I encountered an error: {e}"
 
@@ -375,7 +403,7 @@ def _resume_graph():
         st.toast("PDF Generated Successfully!", icon="📄")
 
     # Check if graph hit another interrupt (revision cycle)
-    state_snapshot = graph.get_state(config)
+    state_snapshot = graph.get_state(config)  # noqa: F821
     if state_snapshot.next and "human_review" in state_snapshot.next:
         st.session_state.awaiting_approval = True
     else:
@@ -407,14 +435,17 @@ def _process_user_input(user_input: str):
         full_response = ""
         run_id = None
         response_placeholder = st.empty()
-        
+
         # Record current PDF count to detect if a new one is generated
         initial_pdf_count = len(st.session_state.pdf_paths)
 
         try:
+
             async def _run_stream():
                 nonlocal full_response, run_id
-                async for event in client.stream_research(thread_id, question=user_input):
+                async for event in client.stream_research(
+                    thread_id, question=user_input
+                ):
                     event_type = event["event"]
                     data = event["data"]
 
@@ -429,27 +460,37 @@ def _process_user_input(user_input: str):
                         agent_name = data.get("agent", "researcher")
                         status_label = f"🟢 {agent_name.capitalize()}: Working..."
                         status_container.update(label=status_label, state="running")
-                        
+
                         if "tool_calls" in data:
                             for tc in data["tool_calls"]:
-                                status_container.markdown(f"**🔧 Executing tool:** `{tc}`")
-                        
+                                status_container.markdown(
+                                    f"**🔧 Executing tool:** `{tc}`"
+                                )
+
                         if data.get("interrupt") == "human_review":
                             st.session_state.awaiting_approval = True
                     elif event_type == "telemetry":
-                        st.session_state.total_input_tokens += data.get("input_tokens", 0)
-                        st.session_state.total_output_tokens += data.get("output_tokens", 0)
+                        st.session_state.total_input_tokens += data.get(
+                            "input_tokens", 0
+                        )
+                        st.session_state.total_output_tokens += data.get(
+                            "output_tokens", 0
+                        )
                     elif event_type == "tool_calls":
                         for tc_name in data.get("tools", []):
-                            st.session_state.tool_counts[tc_name] = st.session_state.tool_counts.get(tc_name, 0) + 1
+                            st.session_state.tool_counts[tc_name] = (
+                                st.session_state.tool_counts.get(tc_name, 0) + 1
+                            )
                     elif event_type == "error":
                         status_container.error(f"Backend Error: {data}")
-                
+
                 response_placeholder.markdown(full_response)
 
             asyncio.run(_run_stream())
             _scan_for_pdfs(full_response)
-            status_container.update(label="✅ Task Complete", state="complete", expanded=False)
+            status_container.update(
+                label="✅ Task Complete", state="complete", expanded=False
+            )
 
         except Exception as e:
             st.error(f"❌ An error occurred: {e}")

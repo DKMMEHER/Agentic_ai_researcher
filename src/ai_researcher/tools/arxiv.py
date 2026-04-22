@@ -13,7 +13,7 @@ from langchain_core.tools import tool
 from ai_researcher.config import get_settings
 from ai_researcher.exceptions import ArxivSearchError
 from ai_researcher.logging import get_logger
-from ai_researcher.models.schemas import ArxivPaper, SearchResult
+from ai_researcher.models.schemas import SearchResult
 
 logger = get_logger(__name__)
 
@@ -83,13 +83,15 @@ def _parse_arxiv_xml(xml_content: str) -> list[dict]:
         title = entry.findtext("atom:title", namespaces=_ARXIV_NS) or ""
         summary = entry.findtext("atom:summary", namespaces=_ARXIV_NS) or ""
 
-        entries.append({
-            "title": " ".join(title.split()),  # Normalize whitespace
-            "summary": summary.strip(),
-            "authors": authors,
-            "categories": categories,
-            "pdf": pdf_link,
-        })
+        entries.append(
+            {
+                "title": " ".join(title.split()),  # Normalize whitespace
+                "summary": summary.strip(),
+                "authors": authors,
+                "categories": categories,
+                "pdf": pdf_link,
+            }
+        )
 
     return entries
 

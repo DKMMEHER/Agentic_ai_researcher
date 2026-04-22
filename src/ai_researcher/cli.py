@@ -21,7 +21,7 @@ def _run_cli():
     from ai_researcher.agent.prompts import load_prompt
 
     graph, config = build_graph()
-    system_prompt = load_prompt()
+    load_prompt()
 
     print("\n🔬 AI Research Agent — Interactive Mode")
     print("=" * 50)
@@ -50,7 +50,7 @@ def _run_cli():
             for s in graph.stream(input_data, config, stream_mode="values"):
                 message = s["messages"][-1]
                 if hasattr(message, "content") and message.content:
-                    content = (
+                    (
                         message.content
                         if isinstance(message.content, str)
                         else str(message.content)
@@ -83,10 +83,14 @@ def _run_cli():
                         instructions = input("Revision instructions: ").strip()
                     except (EOFError, KeyboardInterrupt):
                         instructions = ""
-                    graph.update_state(config, {
-                        "human_approval": "revise",
-                        "revision_instructions": instructions or "Please do more research.",
-                    })
+                    graph.update_state(
+                        config,
+                        {
+                            "human_approval": "revise",
+                            "revision_instructions": instructions
+                            or "Please do more research.",
+                        },
+                    )
                 elif choice in ("x", "abort", "n", "no"):
                     graph.update_state(config, {"human_approval": "abort"})
                     for _ in graph.stream(None, config, stream_mode="values"):
@@ -100,7 +104,7 @@ def _run_cli():
                 # Resume the graph and stream output
                 for s in graph.stream(None, config, stream_mode="values"):
                     message = s["messages"][-1]
-                    if hasattr(message, "content") and message.content:
+                    if hasattr(message, "content") and message.content:  # noqa: SIM102
                         if hasattr(message, "tool_calls") or not hasattr(
                             message, "tool_call_id"
                         ):
@@ -117,15 +121,13 @@ def _run_cli():
 def _run_server(reload: bool = False):
     """Launch the FastAPI backend server."""
     import uvicorn
+
     print("\n🚀 Launching FastAPI Backend...")
     print(f"   Host: 0.0.0.0, Port: 8000, Reload: {reload}\n")
-    
+
     # Run the server using uvicorn
     uvicorn.run(
-        "ai_researcher.server.main:app", 
-        host="0.0.0.0", 
-        port=8000, 
-        reload=reload
+        "ai_researcher.server.main:app", host="0.0.0.0", port=8000, reload=reload
     )
 
 
@@ -175,7 +177,7 @@ def main():
 
     # Setup logging
     setup_logging(level=args.log_level)
-    
+
     if args.mode == "server":
         _run_server(reload=args.reload)
     elif args.mode == "ui":

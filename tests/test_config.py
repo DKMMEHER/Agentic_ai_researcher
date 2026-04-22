@@ -1,8 +1,8 @@
 """Tests for the Settings configuration module."""
 
 import os
+
 import pytest
-from unittest.mock import patch
 
 from ai_researcher.config import Settings, get_settings
 
@@ -19,14 +19,16 @@ class TestSettingsValidation:
 
         with pytest.raises(Exception) as exc_info:
             Settings()  # type: ignore[call-arg]
-        assert "log_level" in str(exc_info.value).lower() or "TRACE" in str(exc_info.value)
+        assert "log_level" in str(exc_info.value).lower() or "TRACE" in str(
+            exc_info.value
+        )
 
     def test_empty_groq_key_raises(self, monkeypatch):
         """GROQ_API_KEY validator should reject empty or whitespace-only values."""
         monkeypatch.setenv("GROQ_API_KEY", "   ")
         get_settings.cache_clear()
 
-        with pytest.raises(Exception):
+        with pytest.raises(ValueError):
             Settings()  # type: ignore[call-arg]
 
     def test_valid_log_level_uppercases(self, monkeypatch):
@@ -70,7 +72,7 @@ class TestGetSettings:
         monkeypatch.setenv("LANGSMITH_PROJECT", "test-project")
         get_settings.cache_clear()
 
-        settings = get_settings()
+        get_settings()
         assert os.environ.get("LANGSMITH_TRACING_V2") == "true"
         assert os.environ.get("LANGSMITH_API_KEY") == "ls-test-key"
         assert os.environ.get("LANGSMITH_PROJECT") == "test-project"

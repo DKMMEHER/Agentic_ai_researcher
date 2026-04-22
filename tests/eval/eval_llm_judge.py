@@ -12,13 +12,13 @@ Usage:
     python -m tests.eval.eval_llm_judge --max-cases 2
 """
 
+import argparse
 import json
 import re
 import sys
 import time
-import argparse
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
@@ -74,7 +74,7 @@ def load_judge_cases(path=None, max_cases=None):
     """Load judge test cases."""
     if path is None:
         path = Path(__file__).parent / "judge_test_cases.json"
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         cases = json.load(f)
     if max_cases:
         cases = cases[:max_cases]
@@ -93,7 +93,7 @@ def get_agent_response(graph, config, system_prompt, task):
     try:
         for event in graph.stream(input_data, config, stream_mode="values"):
             last_msg = event["messages"][-1]
-            if hasattr(last_msg, "content") and isinstance(last_msg.content, str):
+            if hasattr(last_msg, "content") and isinstance(last_msg.content, str):  # noqa: SIM102
                 if not getattr(last_msg, "tool_call_id", None):  # Skip tool messages
                     final_response = last_msg.content
     except Exception as e:
@@ -111,10 +111,12 @@ AI AGENT'S RESPONSE:
 {response[:4000]}"""  # Limit to avoid token overflow
 
     try:
-        result = judge_llm.invoke([
-            {"role": "system", "content": JUDGE_SYSTEM_PROMPT},
-            {"role": "user", "content": judge_input},
-        ])
+        result = judge_llm.invoke(
+            [
+                {"role": "system", "content": JUDGE_SYSTEM_PROMPT},
+                {"role": "user", "content": judge_input},
+            ]
+        )
 
         raw = result.content.strip()
 
@@ -127,15 +129,21 @@ AI AGENT'S RESPONSE:
 
     except json.JSONDecodeError:
         return {
-            "accuracy": 0, "completeness": 0, "coherence": 0,
-            "citation_quality": 0, "depth": 0,
-            "justification": f"Judge returned invalid JSON: {raw[:200]}"
+            "accuracy": 0,
+            "completeness": 0,
+            "coherence": 0,
+            "citation_quality": 0,
+            "depth": 0,
+            "justification": f"Judge returned invalid JSON: {raw[:200]}",
         }
     except Exception as e:
         return {
-            "accuracy": 0, "completeness": 0, "coherence": 0,
-            "citation_quality": 0, "depth": 0,
-            "justification": f"Judge error: {e!s}"
+            "accuracy": 0,
+            "completeness": 0,
+            "coherence": 0,
+            "citation_quality": 0,
+            "depth": 0,
+            "justification": f"Judge error: {e!s}",
         }
 
 
@@ -148,10 +156,11 @@ def compute_average(scores):
 
 def create_judge_llm(provider, model_name):
     """Create the judge LLM based on provider choice."""
-    settings = get_settings()
+    settings = get_settings()  # noqa: F821
 
     if provider == "gemini":
         from langchain_google_genai import ChatGoogleGenerativeAI
+
         return ChatGoogleGenerativeAI(
             model=model_name,
             temperature=0,
@@ -159,6 +168,7 @@ def create_judge_llm(provider, model_name):
         )
     else:  # groq
         from langchain_groq import ChatGroq
+
         return ChatGroq(
             api_key=settings.groq_api_key,
             model_name=model_name,
@@ -174,11 +184,15 @@ def run_evaluation(cases, judge_provider="gemini", judge_model=None):
     from ai_researcher.logging import setup_logging
 
     setup_logging()
-    settings = get_settings()
+    get_settings()
 
     # Pick default model per provider
     if judge_model is None:
-        judge_model = "gemini-2.0-flash" if judge_provider == "gemini" else "llama-3.3-70b-versatile"
+        judge_model = (
+            "gemini-2.0-flash"
+            if judge_provider == "gemini"
+            else "llama-3.3-70b-versatile"
+        )
 
     # Agent (generates the response)
     graph, config = build_graph(thread_id="eval-judge")
@@ -203,7 +217,7 @@ def run_evaluation(cases, judge_provider="gemini", judge_model=None):
         print(f"         Category: {category}")
 
         # Step 1: Get agent response
-        print(f"         🤖 Generating response...")
+        print("         🤖 Generating response...")
         start = time.time()
         response = get_agent_response(graph, config, agent_prompt, task)
         gen_time = round(time.time() - start, 2)
@@ -213,29 +227,33 @@ def run_evaluation(cases, judge_provider="gemini", judge_model=None):
         time.sleep(5)
 
         # Step 2: Judge the response
-        print(f"         ⚖️  Judging...")
+        print("         ⚖️  Judging...")
         scores = judge_response(judge_llm, task, response)
         avg = compute_average(scores)
 
         status = "✅" if avg >= case.get("min_expected_score", 3.0) else "❌"
         print(f"         {status} Score: {avg}/5.0")
-        print(f"            A:{scores.get('accuracy',0)} C:{scores.get('completeness',0)} "
-              f"H:{scores.get('coherence',0)} Q:{scores.get('citation_quality',0)} D:{scores.get('depth',0)}")
+        print(
+            f"            A:{scores.get('accuracy', 0)} C:{scores.get('completeness', 0)} "
+            f"H:{scores.get('coherence', 0)} Q:{scores.get('citation_quality', 0)} D:{scores.get('depth', 0)}"
+        )
         if scores.get("justification"):
             print(f"            💬 {scores['justification'][:80]}...")
         print()
 
-        results.append({
-            "id": case["id"],
-            "task": task,
-            "category": category,
-            "response_length": len(response),
-            "response_preview": response[:300],
-            "scores": scores,
-            "average_score": avg,
-            "passed": avg >= case.get("min_expected_score", 3.0),
-            "gen_time_seconds": gen_time,
-        })
+        results.append(
+            {
+                "id": case["id"],
+                "task": task,
+                "category": category,
+                "response_length": len(response),
+                "response_preview": response[:300],
+                "scores": scores,
+                "average_score": avg,
+                "passed": avg >= case.get("min_expected_score", 3.0),
+                "gen_time_seconds": gen_time,
+            }
+        )
 
         # Rate limit protection
         time.sleep(8)
@@ -253,7 +271,9 @@ def print_summary(results):
     print("  📊 LLM-AS-A-JUDGE RESULTS")
     print("=" * 70)
     print(f"\n  Overall Average: {avg_total:.1f}/5.0")
-    print(f"  Pass Rate: {passed}/{total} ({passed/total*100:.0f}%)" if total else "")
+    print(
+        f"  Pass Rate: {passed}/{total} ({passed / total * 100:.0f}%)" if total else ""
+    )
 
     # Per-dimension averages
     dims = ["accuracy", "completeness", "coherence", "citation_quality", "depth"]
@@ -285,8 +305,12 @@ def save_report(results):
     summary = {
         "timestamp": datetime.now().isoformat(),
         "total_cases": total,
-        "average_score": round(sum(r["average_score"] for r in results) / total, 2) if total else 0,
-        "pass_rate": round(sum(1 for r in results if r["passed"]) / total, 3) if total else 0,
+        "average_score": round(sum(r["average_score"] for r in results) / total, 2)
+        if total
+        else 0,
+        "pass_rate": round(sum(1 for r in results if r["passed"]) / total, 3)
+        if total
+        else 0,
         "results": results,
     }
 
@@ -299,15 +323,25 @@ def save_report(results):
 def main():
     parser = argparse.ArgumentParser(description="LLM-as-a-Judge evaluation")
     parser.add_argument("--max-cases", type=int, default=None, help="Limit test cases")
-    parser.add_argument("--judge-provider", type=str, default="gemini",
-                        choices=["gemini", "groq"],
-                        help="Which LLM provider to use as judge (default: gemini)")
-    parser.add_argument("--judge-model", type=str, default=None,
-                        help="Model name (default: gemini-2.0-flash or llama-3.3-70b-versatile)")
+    parser.add_argument(
+        "--judge-provider",
+        type=str,
+        default="gemini",
+        choices=["gemini", "groq"],
+        help="Which LLM provider to use as judge (default: gemini)",
+    )
+    parser.add_argument(
+        "--judge-model",
+        type=str,
+        default=None,
+        help="Model name (default: gemini-2.0-flash or llama-3.3-70b-versatile)",
+    )
     args = parser.parse_args()
 
     cases = load_judge_cases(max_cases=args.max_cases)
-    results = run_evaluation(cases, judge_provider=args.judge_provider, judge_model=args.judge_model)
+    results = run_evaluation(
+        cases, judge_provider=args.judge_provider, judge_model=args.judge_model
+    )
     print_summary(results)
     save_report(results)
 

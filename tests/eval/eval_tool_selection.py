@@ -8,37 +8,42 @@ Usage:
     python -m tests.eval.eval_tool_selection --max-cases 5
 """
 
+import argparse
 import json
 import sys
 import time
-import argparse
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
 # Ensure the project src is importable
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 
-def load_test_cases(path: Path | None = None, max_cases: int | None = None) -> list[dict]:
+def load_test_cases(
+    path: Path | None = None, max_cases: int | None = None
+) -> list[dict]:
     """Load test cases from JSON file."""
     if path is None:
         path = Path(__file__).parent / "test_cases.json"
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         cases = json.load(f)
     if max_cases:
         cases = cases[:max_cases]
     return cases
 
 
-async def get_first_tool_call(graph, config, question: str) -> tuple[str | None, str | None]:
+async def get_first_tool_call(
+    graph, config, question: str
+) -> tuple[str | None, str | None]:
     """Run the agent on a single question and capture the FIRST tool it tries to call.
-    
+
     Now awareness of the Supervisor pattern:
     1. The first event will likely be the Supervisor deciding intent.
     2. We continue streaming until we hit a node that calls a tool (usually Researcher).
     """
     import asyncio
+
     input_data = {"messages": [{"role": "user", "content": question}]}
     classified_intent = None
     tool_found = None
@@ -52,21 +57,21 @@ async def get_first_tool_call(graph, config, question: str) -> tuple[str | None,
                 if "supervisor" in event:
                     classified_intent = event["supervisor"].get("intent")
                     print(f"         [Supervisor] Intent: {classified_intent}")
-                
+
                 # Check any node's output for tool calls (usually 'researcher')
-                for node_name, output in event.items():
+                for _node_name, output in event.items():
                     if isinstance(output, dict) and "messages" in output:
                         last_msg = output["messages"][-1]
                         if getattr(last_msg, "tool_calls", None):
                             tool_found = last_msg.tool_calls[0]["name"]
                             break
-                
+
                 if tool_found:
                     break
         finally:
             # Explicitly close to prevent CancelledError on early return
             await streamer.aclose()
-                        
+
     except (asyncio.CancelledError, GeneratorExit):
         # This is expected when we stop early and call aclose()
         pass
@@ -80,7 +85,6 @@ async def get_first_tool_call(graph, config, question: str) -> tuple[str | None,
 async def run_evaluation(test_cases: list[dict]) -> dict:
     """Run the full evaluation suite and return results."""
     from ai_researcher.agent.graph import build_graph
-    from ai_researcher.agent.prompts import load_prompt
     from ai_researcher.logging import setup_logging
 
     setup_logging()
@@ -118,16 +122,18 @@ async def run_evaluation(test_cases: list[dict]) -> dict:
         print(f"         Got:      {actual_tool or 'NO TOOL CALLED'}")
         print(f"         Result:   {status}  ({elapsed}s)\n")
 
-        results.append({
-            "id": case["id"],
-            "question": question,
-            "category": category,
-            "expected_tool": expected,
-            "actual_tool": actual_tool,
-            "intent": intent,
-            "correct": is_correct,
-            "elapsed_seconds": elapsed,
-        })
+        results.append(
+            {
+                "id": case["id"],
+                "question": question,
+                "category": category,
+                "expected_tool": expected,
+                "actual_tool": actual_tool,
+                "intent": intent,
+                "correct": is_correct,
+                "elapsed_seconds": elapsed,
+            }
+        )
 
         # Pause to avoid Groq free-tier rate limits (6,000 tokens/min)
         time.sleep(8)
@@ -177,7 +183,9 @@ def print_summary(summary: dict):
     print("  " + "-" * 50)
     for cat, data in summary["category_breakdown"].items():
         bar = "█" * int(data["accuracy"] / 10)
-        print(f"    {cat:<20} {data['accuracy']:>5}%  {bar}  ({data['correct']}/{data['total']})")
+        print(
+            f"    {cat:<20} {data['accuracy']:>5}%  {bar}  ({data['correct']}/{data['total']})"
+        )
 
     # Show failures
     failures = [r for r in summary["results"] if not r["correct"]]
@@ -210,9 +218,14 @@ def save_report(summary: dict):
 
 def main():
     import asyncio
+
     parser = argparse.ArgumentParser(description="Evaluate tool selection accuracy")
-    parser.add_argument("--max-cases", type=int, default=None, help="Limit number of test cases to run")
-    parser.add_argument("--test-file", type=str, default=None, help="Path to custom test_cases.json")
+    parser.add_argument(
+        "--max-cases", type=int, default=None, help="Limit number of test cases to run"
+    )
+    parser.add_argument(
+        "--test-file", type=str, default=None, help="Path to custom test_cases.json"
+    )
     args = parser.parse_args()
 
     test_path = Path(args.test_file) if args.test_file else None

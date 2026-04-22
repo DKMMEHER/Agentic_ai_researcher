@@ -7,6 +7,7 @@ Supports three backends:
 
 import logging
 from typing import Literal
+
 from langgraph.checkpoint.memory import MemorySaver
 
 logger = logging.getLogger(__name__)
@@ -14,7 +15,9 @@ logger = logging.getLogger(__name__)
 CheckpointBackend = Literal["memory", "sqlite"]
 
 
-def get_checkpointer(backend: CheckpointBackend = "sqlite", db_url: str = "checkpoints.db"):
+def get_checkpointer(
+    backend: CheckpointBackend = "sqlite", db_url: str = "checkpoints.db"
+):
     """Return a configured LangGraph checkpointer.
 
     Args:
@@ -31,6 +34,7 @@ def get_checkpointer(backend: CheckpointBackend = "sqlite", db_url: str = "check
     elif backend == "sqlite":
         try:
             from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
+
             logger.info("Using AsyncSqliteSaver checkpointer (db=%s)", db_url)
             # from_conn_string() returns an async context manager.
             # LangGraph's graph.compile() accepts this directly.
@@ -43,5 +47,7 @@ def get_checkpointer(backend: CheckpointBackend = "sqlite", db_url: str = "check
             return MemorySaver()
 
     else:
-        logger.warning("Unknown checkpoint backend '%s', falling back to MemorySaver", backend)
+        logger.warning(
+            "Unknown checkpoint backend '%s', falling back to MemorySaver", backend
+        )
         return MemorySaver()

@@ -9,25 +9,25 @@ Usage:
     python -m tests.eval.langsmith_evaluate_rag --chunk-size 500 --chunk-overlap 100 --experiment-name "chunk-500-overlap-100"
 """
 
+import argparse
+import hashlib
 import io
 import sys
-import hashlib
-import argparse
 from pathlib import Path
 
 import PyPDF2
 import requests
-from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
-from ai_researcher.config import get_settings
+from ai_researcher.config import get_settings  # noqa: E402
+
 get_settings()
 
-from langsmith import Client, evaluate
-
+from langsmith import Client, evaluate  # noqa: E402
 
 DATASET_NAME = "Agentic_ai_researcher_RAG Evaluation"
 
@@ -45,6 +45,7 @@ def get_store():
     global _VECTOR_STORE
     if _VECTOR_STORE is None:
         from ai_researcher.tools.db import get_vector_store
+
         _VECTOR_STORE = get_vector_store()
     return _VECTOR_STORE
 
@@ -85,7 +86,9 @@ def ensure_pdf_ingested(url):
     store = get_store()
     store.add_documents(docs)
     _INGESTED_PDFS.add(url)
-    print(f"    ✅ Ingested {len(chunks)} chunks (size={_CHUNK_SIZE}, overlap={_CHUNK_OVERLAP})")
+    print(
+        f"    ✅ Ingested {len(chunks)} chunks (size={_CHUNK_SIZE}, overlap={_CHUNK_OVERLAP})"
+    )
 
 
 def rag_target(inputs: dict) -> dict:
@@ -114,16 +117,39 @@ def rag_target(inputs: dict) -> dict:
 
 # --- EVALUATORS ---
 
+
 def context_precision_evaluator(run, example) -> dict:
     """Measures what fraction of retrieved chunks are relevant to the ground truth."""
     ground_truth = example.outputs["ground_truth"]
     contexts = run.outputs.get("contexts", [])
 
     if not contexts:
-        return {"key": "context_precision", "score": 0.0, "comment": "No chunks retrieved"}
+        return {
+            "key": "context_precision",
+            "score": 0.0,
+            "comment": "No chunks retrieved",
+        }
 
     gt_keywords = set(ground_truth.lower().split())
-    stop_words = {"the", "a", "an", "is", "was", "were", "are", "with", "and", "or", "of", "in", "to", "for", "on", "at", "by"}
+    stop_words = {
+        "the",
+        "a",
+        "an",
+        "is",
+        "was",
+        "were",
+        "are",
+        "with",
+        "and",
+        "or",
+        "of",
+        "in",
+        "to",
+        "for",
+        "on",
+        "at",
+        "by",
+    }
     gt_keywords = gt_keywords - stop_words
 
     relevant = 0
@@ -147,7 +173,25 @@ def context_recall_evaluator(run, example) -> dict:
     contexts = run.outputs.get("contexts", [])
 
     gt_keywords = set(ground_truth.lower().split())
-    stop_words = {"the", "a", "an", "is", "was", "were", "are", "with", "and", "or", "of", "in", "to", "for", "on", "at", "by"}
+    stop_words = {
+        "the",
+        "a",
+        "an",
+        "is",
+        "was",
+        "were",
+        "are",
+        "with",
+        "and",
+        "or",
+        "of",
+        "in",
+        "to",
+        "for",
+        "on",
+        "at",
+        "by",
+    }
     gt_keywords = gt_keywords - stop_words
 
     all_text = " ".join(contexts).lower()
@@ -167,7 +211,25 @@ def hit_evaluator(run, example) -> dict:
     contexts = run.outputs.get("contexts", [])
 
     gt_keywords = set(ground_truth.lower().split())
-    stop_words = {"the", "a", "an", "is", "was", "were", "are", "with", "and", "or", "of", "in", "to", "for", "on", "at", "by"}
+    stop_words = {
+        "the",
+        "a",
+        "an",
+        "is",
+        "was",
+        "were",
+        "are",
+        "with",
+        "and",
+        "or",
+        "of",
+        "in",
+        "to",
+        "for",
+        "on",
+        "at",
+        "by",
+    }
     gt_keywords = gt_keywords - stop_words
 
     all_text = " ".join(contexts).lower()
@@ -202,6 +264,7 @@ def main():
 
     # Initialize logging
     from ai_researcher.logging import setup_logging
+
     setup_logging()
 
     client = Client()
@@ -217,7 +280,7 @@ def main():
     print(f"  📐 Chunk Size: {_CHUNK_SIZE} | Overlap: {_CHUNK_OVERLAP}")
     print("  ⏳ Running evaluation...\n")
 
-    results = evaluate(
+    evaluate(
         rag_target,
         data=DATASET_NAME,
         evaluators=[

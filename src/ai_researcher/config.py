@@ -4,14 +4,12 @@ All configuration is loaded from environment variables and/or a `.env` file.
 Use `get_settings()` to access the singleton settings instance.
 """
 
-from functools import lru_cache
 import os
+from functools import lru_cache
 from pathlib import Path
-from typing import Optional
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
 
 # Project root is three levels up from this file: src/ai_researcher/config.py → project root
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -28,23 +26,23 @@ class Settings(BaseSettings):
     )
 
     # --- API Keys ---
-    groq_api_key: Optional[str] = Field(
+    groq_api_key: str | None = Field(
         default=None,
         description="Groq API key for Llama model access.",
     )
-    tavily_api_key: Optional[str] = Field(
+    tavily_api_key: str | None = Field(
         default=None,
         description="Tavily API key for advanced web search (Optional).",
     )
-    hf_token: Optional[str] = Field(
+    hf_token: str | None = Field(
         default=None,
         description="HuggingFace Hub token for authenticated model downloads.",
     )
-    gemini_api_key: Optional[str] = Field(
+    gemini_api_key: str | None = Field(
         default=None,
         description="Google API key for Gemini models (used as LLM judge).",
     )
-    serper_api_key: Optional[str] = Field(
+    serper_api_key: str | None = Field(
         default=None,
         description="Serper.dev API key for Google Scholar queries.",
     )
@@ -54,7 +52,7 @@ class Settings(BaseSettings):
         default="false",
         description="Enable LangSmith tracing (true/false).",
     )
-    langsmith_api_key: Optional[str] = Field(
+    langsmith_api_key: str | None = Field(
         default=None,
         description="LangSmith API key for telemetry.",
     )
@@ -145,7 +143,7 @@ class Settings(BaseSettings):
 def get_settings() -> Settings:
     """Get the singleton Settings instance. Cached after first call."""
     settings = Settings()  # type: ignore[call-arg]
-    
+
     # Push environment variables into os.environ for LangSmith auto-discovery
     os.environ["GROQ_API_KEY"] = settings.groq_api_key
     if settings.tavily_api_key:
@@ -156,15 +154,15 @@ def get_settings() -> Settings:
         os.environ["GOOGLE_API_KEY"] = settings.gemini_api_key
     if settings.serper_api_key:
         os.environ["SERPER_API_KEY"] = settings.serper_api_key
-        
+
     if settings.langsmith_tracing_v2.lower() == "true":
         # LangChain natively requires the LANGCHAIN_ prefix for telemetry under the hood.
         # We push both just to be 100% safe.
         os.environ["LANGSMITH_TRACING_V2"] = "true"
-        
+
         if settings.langsmith_api_key:
             os.environ["LANGSMITH_API_KEY"] = settings.langsmith_api_key
         if settings.langsmith_project:
             os.environ["LANGSMITH_PROJECT"] = settings.langsmith_project
-            
+
     return settings

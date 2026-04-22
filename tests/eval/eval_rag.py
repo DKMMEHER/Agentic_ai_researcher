@@ -10,19 +10,19 @@ Usage:
     python -m tests.eval.eval_rag --chunk-size 500 --chunk-overlap 100
 """
 
+import argparse
+import hashlib
 import io
 import json
 import sys
 import time
-import hashlib
-import argparse
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
 import PyPDF2
 import requests
-from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
@@ -32,7 +32,7 @@ def load_rag_cases(path=None, max_papers=None):
     """Load RAG test cases."""
     if path is None:
         path = Path(__file__).parent / "rag_test_cases.json"
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         cases = json.load(f)
     if max_papers:
         cases = cases[:max_papers]
@@ -70,7 +70,9 @@ def ingest_pdf(url, vector_store, chunk_size=1000, chunk_overlap=200):
     ]
 
     vector_store.add_documents(docs)
-    print(f"    ✅ Ingested {len(chunks)} chunks (size={chunk_size}, overlap={chunk_overlap})")
+    print(
+        f"    ✅ Ingested {len(chunks)} chunks (size={chunk_size}, overlap={chunk_overlap})"
+    )
     return len(chunks)
 
 
@@ -98,7 +100,25 @@ def query_and_evaluate(vector_store, url, question, ground_truth, k=4):
     # How many retrieved chunks actually contain ground truth keywords?
     gt_keywords = set(ground_truth.lower().split())
     # Remove common words
-    stop_words = {"the", "a", "an", "is", "was", "were", "are", "with", "and", "or", "of", "in", "to", "for", "on", "at", "by"}
+    stop_words = {
+        "the",
+        "a",
+        "an",
+        "is",
+        "was",
+        "were",
+        "are",
+        "with",
+        "and",
+        "or",
+        "of",
+        "in",
+        "to",
+        "for",
+        "on",
+        "at",
+        "by",
+    }
     gt_keywords = gt_keywords - stop_words
 
     relevant_count = 0
@@ -135,7 +155,7 @@ def query_and_evaluate(vector_store, url, question, ground_truth, k=4):
 
 def run_ragas_evaluation(eval_results, use_ragas=False):
     """Optionally run full RAGAS metrics (requires LLM tokens).
-    
+
     If use_ragas=False, returns only custom metrics.
     If use_ragas=True, uses RAGAS framework for faithfulness & relevancy.
     """
@@ -143,14 +163,14 @@ def run_ragas_evaluation(eval_results, use_ragas=False):
         return None
 
     try:
+        from datasets import Dataset
         from ragas import evaluate as ragas_evaluate
         from ragas.metrics import (
+            answer_relevancy,
             context_precision,
             context_recall,
             faithfulness,
-            answer_relevancy,
         )
-        from datasets import Dataset
 
         # Build RAGAS dataset
         data = {
@@ -162,7 +182,9 @@ def run_ragas_evaluation(eval_results, use_ragas=False):
 
         for r in eval_results:
             data["question"].append(r["question"])
-            data["answer"].append(r["contexts"][0] if r["contexts"] else "No context found")
+            data["answer"].append(
+                r["contexts"][0] if r["contexts"] else "No context found"
+            )
             data["contexts"].append(r["contexts"])
             data["ground_truth"].append(r["ground_truth"])
 
@@ -177,15 +199,15 @@ def run_ragas_evaluation(eval_results, use_ragas=False):
 
     except Exception as e:
         print(f"    ⚠️  RAGAS evaluation failed: {e}")
-        print("    ℹ️  RAGAS requires an OpenAI API key for LLM-based metrics.")
-        print("    ℹ️  Custom metrics are still available below.")
+        print("    ℹ️  RAGAS requires an OpenAI API key for LLM-based metrics.")  # noqa: RUF001
+        print("    ℹ️  Custom metrics are still available below.")  # noqa: RUF001
         return None
 
 
 def run_evaluation(cases, chunk_size=1000, chunk_overlap=200, use_ragas=False):
     """Run the full RAG evaluation."""
-    from ai_researcher.tools.db import get_vector_store
     from ai_researcher.logging import setup_logging
+    from ai_researcher.tools.db import get_vector_store
 
     setup_logging()
     vector_store = get_vector_store()
@@ -207,7 +229,7 @@ def run_evaluation(cases, chunk_size=1000, chunk_overlap=200, use_ragas=False):
 
         # Ingest the PDF
         try:
-            num_chunks = ingest_pdf(url, vector_store, chunk_size, chunk_overlap)
+            ingest_pdf(url, vector_store, chunk_size, chunk_overlap)
         except Exception as e:
             print(f"    ❌ Failed to ingest: {e}")
             continue
@@ -223,7 +245,9 @@ def run_evaluation(cases, chunk_size=1000, chunk_overlap=200, use_ragas=False):
             paper_results.append(result)
 
             hit_icon = "✅" if result["hit"] else "❌"
-            print(f"    {hit_icon} P:{result['context_precision']:.0%}  R:{result['context_recall']:.0%}  | {q['question'][:50]}...")
+            print(
+                f"    {hit_icon} P:{result['context_precision']:.0%}  R:{result['context_recall']:.0%}  | {q['question'][:50]}..."
+            )
 
         all_results.extend(paper_results)
         print()
@@ -253,12 +277,14 @@ def print_summary(results, ragas_results=None):
     print("  " + "-" * 60)
     for r in results:
         hit_icon = "✅" if r["hit"] else "❌"
-        print(f"    {hit_icon} P:{r['context_precision']:.0%}  R:{r['context_recall']:.0%}  | {r['question'][:50]}...")
+        print(
+            f"    {hit_icon} P:{r['context_precision']:.0%}  R:{r['context_recall']:.0%}  | {r['question'][:50]}..."
+        )
 
     # Show worst performers
     worst = sorted(results, key=lambda x: x["context_recall"])[:3]
     if worst and worst[0]["context_recall"] < 0.5:
-        print(f"\n  ⚠️ Lowest Recall Questions:")
+        print("\n  ⚠️ Lowest Recall Questions:")
         print("  " + "-" * 60)
         for r in worst:
             if r["context_recall"] < 0.5:
@@ -266,7 +292,7 @@ def print_summary(results, ragas_results=None):
                 print(f"           GT: {r['ground_truth'][:60]}...")
 
     if ragas_results:
-        print(f"\n  📈 RAGAS Metrics (LLM-based):")
+        print("\n  📈 RAGAS Metrics (LLM-based):")
         print(f"    {json.dumps(ragas_results, indent=2)[:500]}")
 
     print("\n" + "=" * 70)
@@ -286,14 +312,21 @@ def save_report(results, ragas_results, chunk_size, chunk_overlap):
         "chunk_size": chunk_size,
         "chunk_overlap": chunk_overlap,
         "total_questions": total,
-        "avg_context_precision": round(sum(r["context_precision"] for r in results) / total, 3) if total else 0,
-        "avg_context_recall": round(sum(r["context_recall"] for r in results) / total, 3) if total else 0,
-        "hit_rate": round(sum(1 for r in results if r["hit"]) / total, 3) if total else 0,
+        "avg_context_precision": round(
+            sum(r["context_precision"] for r in results) / total, 3
+        )
+        if total
+        else 0,
+        "avg_context_recall": round(
+            sum(r["context_recall"] for r in results) / total, 3
+        )
+        if total
+        else 0,
+        "hit_rate": round(sum(1 for r in results if r["hit"]) / total, 3)
+        if total
+        else 0,
         "ragas_results": ragas_results,
-        "results": [
-            {k: v for k, v in r.items() if k != "contexts"}
-            for r in results
-        ],
+        "results": [{k: v for k, v in r.items() if k != "contexts"} for r in results],
     }
 
     with open(report_path, "w", encoding="utf-8") as f:
@@ -304,10 +337,18 @@ def save_report(results, ragas_results, chunk_size, chunk_overlap):
 
 def main():
     parser = argparse.ArgumentParser(description="Evaluate RAG retrieval quality")
-    parser.add_argument("--max-papers", type=int, default=None, help="Limit papers to test")
-    parser.add_argument("--chunk-size", type=int, default=1000, help="Chunk size for splitting")
+    parser.add_argument(
+        "--max-papers", type=int, default=None, help="Limit papers to test"
+    )
+    parser.add_argument(
+        "--chunk-size", type=int, default=1000, help="Chunk size for splitting"
+    )
     parser.add_argument("--chunk-overlap", type=int, default=200, help="Chunk overlap")
-    parser.add_argument("--use-ragas", action="store_true", help="Enable RAGAS LLM-based metrics (needs OpenAI key)")
+    parser.add_argument(
+        "--use-ragas",
+        action="store_true",
+        help="Enable RAGAS LLM-based metrics (needs OpenAI key)",
+    )
     args = parser.parse_args()
 
     cases = load_rag_cases(max_papers=args.max_papers)
