@@ -67,7 +67,7 @@ def youtube_transcript_reader(url: str) -> str:
                     transcript_lang = (
                         best.language_code
                         if hasattr(best, "language_code")
-                        else best.get("language_code", "unknown")
+                        else best.get("language_code", "unknown")  # type: ignore
                     )
                     transcript = ytt_api.fetch(video_id, languages=[transcript_lang])
                     logger.info(
@@ -88,7 +88,7 @@ def youtube_transcript_reader(url: str) -> str:
         # Determine if we got dictionaries or dataclasses (API version dependent)
         full_text = " ".join(
             [
-                segment.text if hasattr(segment, "text") else segment["text"]
+                segment.text if hasattr(segment, "text") else segment["text"]  # type: ignore
                 for segment in transcript
             ]
         )

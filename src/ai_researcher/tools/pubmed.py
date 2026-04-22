@@ -75,7 +75,7 @@ def pubmed_search(query: str, max_results: int = 5) -> str:
                 if last_name is not None and fore_name is not None:
                     authors.append(f"{fore_name.text} {last_name.text}")
             if authors:
-                paper_data["authors"] = authors
+                paper_data["authors"] = authors  # type: ignore
 
             pmid_node = article.find(".//PMID")
             if pmid_node is not None and pmid_node.text:

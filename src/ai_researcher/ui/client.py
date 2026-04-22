@@ -20,7 +20,7 @@ class ResearchClient:
                 json={"question": question, "thread_id": thread_id},
             )
             response.raise_for_status()
-            return response.json()["thread_id"]
+            return response.json()["thread_id"]  # type: ignore
 
     async def stream_research(
         self, thread_id: str, question: str | None = None

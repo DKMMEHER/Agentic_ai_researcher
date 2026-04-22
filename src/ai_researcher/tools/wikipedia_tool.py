@@ -1,6 +1,6 @@
 """Wikipedia search tool."""
 
-import wikipedia
+import wikipedia  # type: ignore
 from langchain_core.tools import tool
 from requests.exceptions import RequestException
 
@@ -41,7 +41,7 @@ def wikipedia_search(query: str) -> str:
             result += (
                 f"Other related pages you could search: {', '.join(search_results[1:])}"
             )
-            return result
+            return result  # type: ignore
 
         except wikipedia.exceptions.DisambiguationError as e:
             # Handle ambiguous search terms (e.g. "Mercury" -> Planet, Element, God)

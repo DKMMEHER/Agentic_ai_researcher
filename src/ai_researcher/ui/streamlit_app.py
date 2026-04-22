@@ -18,7 +18,7 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langsmith import Client
-from streamlit_feedback import streamlit_feedback
+from streamlit_feedback import streamlit_feedback  # type: ignore
 
 # Must be the first Streamlit command
 st.set_page_config(
@@ -373,12 +373,10 @@ def _resume_graph():
 
             # FALLBACK: If no streaming chunks were received, pull the last message from the final state
             if not full_response:
-                state_snapshot = graph.get_state(config)  # noqa: F821
-                if state_snapshot.values and "messages" in state_snapshot.values:
-                    last_msg = state_snapshot.values["messages"][-1]
-                    if isinstance(last_msg, AIMessage) and last_msg.content:
-                        full_response = str(last_msg.content)
-                        response_placeholder.markdown(full_response)
+                full_response = (
+                    "I encountered an issue connecting to the backend state."
+                )
+                response_placeholder.markdown(full_response)
 
             # Final safety scan on the entire accumulated text
             _scan_for_pdfs(full_response)
@@ -402,18 +400,9 @@ def _resume_graph():
         st.session_state.chat_history.append({"role": "system", "content": msg})
         st.toast("PDF Generated Successfully!", icon="📄")
 
-    # Check if graph hit another interrupt (revision cycle)
-    state_snapshot = graph.get_state(config)  # noqa: F821
-    if state_snapshot.next and "human_review" in state_snapshot.next:
-        st.session_state.awaiting_approval = True
-    else:
-        st.session_state.awaiting_approval = False
-
-    # Fallback PDF detection: scan all messages in the final state
-    if state_snapshot.values and "messages" in state_snapshot.values:
-        for msg in state_snapshot.values["messages"]:
-            if isinstance(msg, (AIMessage, ToolMessage)):
-                _scan_for_pdfs(msg.content)
+    # The backend handles interrupts and will send an interrupt status event
+    # We now trust the stream event handler to set `st.session_state.awaiting_approval` appropriately.
+    # Fallback message polling is removed since the UI cannot access the persistence graph directly.
 
     st.rerun()
 

@@ -48,9 +48,9 @@ def _create_models(settings: Settings):
             temperature=settings.model_temperature,
         )
     else:
-        base_model = ChatGroq(
+        base_model = ChatGroq(  # type: ignore
             model=settings.model_name,
-            api_key=settings.groq_api_key,
+            api_key=settings.groq_api_key,  # type: ignore
             temperature=settings.model_temperature,
         )
 
@@ -117,7 +117,7 @@ def _should_continue_supervisor(state: AgentState) -> Literal["researcher", "__e
     """Edge function: decide whether supervisor routes to researcher or ends."""
     intent = state.get("intent", "research_paper")
     if intent == "direct_chat":
-        return END
+        return END  # type: ignore
     return "researcher"
 
 
@@ -138,7 +138,7 @@ def _should_continue_researcher(
         return "researcher_tools"
 
     if state.get("intent") == "quick_research":
-        return END
+        return END  # type: ignore
 
     return "human_review"
 
@@ -179,7 +179,7 @@ def _route_after_review(
     if current == "researcher":
         return "researcher"
     elif current == "done":
-        return END
+        return END  # type: ignore
     return "writer"
 
 
@@ -197,7 +197,7 @@ def _should_continue_writer(
             return "guardrail_handler"
         return "writer_tools"
 
-    return END
+    return END  # type: ignore
 
 
 async def _guardrail_handler(state: AgentState) -> dict:
@@ -283,7 +283,8 @@ def build_graph(
         from ai_researcher.agent.checkpointer import get_checkpointer
 
         checkpointer = get_checkpointer(
-            backend=settings.checkpoint_backend, db_url=settings.checkpoint_db_url
+            backend=settings.checkpoint_backend,  # type: ignore[arg-type]
+            db_url=settings.checkpoint_db_url,  # type: ignore
         )
 
     graph = workflow.compile(

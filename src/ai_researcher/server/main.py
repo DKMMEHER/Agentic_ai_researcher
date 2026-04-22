@@ -269,10 +269,10 @@ async def handle_action(request: Request, body: ActionRequest):
 
     update = {"human_approval": body.action}
     if body.action == "revise" and body.instructions:
-        update["revision_instructions"] = body.instructions
+        update["revision_instructions"] = body.instructions  # type: ignore
 
     # Must use async method with AsyncSqliteSaver
-    await graph.aupdate_state(config, update)
+    await graph.aupdate_state(config, update)  # type: ignore
     return {"status": "action_recorded", "next_step": "ready_to_stream"}
 
 

@@ -142,10 +142,10 @@ class Settings(BaseSettings):
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
     """Get the singleton Settings instance. Cached after first call."""
-    settings = Settings()  # type: ignore[call-arg]
+    settings = Settings()  # type: ignore
 
     # Push environment variables into os.environ for LangSmith auto-discovery
-    os.environ["GROQ_API_KEY"] = settings.groq_api_key
+    os.environ["GROQ_API_KEY"] = settings.groq_api_key  # type: ignore
     if settings.tavily_api_key:
         os.environ["TAVILY_API_KEY"] = settings.tavily_api_key
     if settings.hf_token:

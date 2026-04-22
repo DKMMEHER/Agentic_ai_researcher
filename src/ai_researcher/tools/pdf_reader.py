@@ -6,7 +6,7 @@ and extracts raster images (figures/tables) into the local output directory.
 
 import hashlib
 
-import fitz  # PyMuPDF
+import fitz  # PyMuPDF  # type: ignore[import-untyped]
 import requests
 from langchain_core.documents import Document
 from langchain_core.tools import tool

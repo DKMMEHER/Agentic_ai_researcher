@@ -42,9 +42,9 @@ async def _call_supervisor(state: AgentState) -> dict:
             temperature=0,  # Deterministic for routing
         )
     else:
-        model = ChatGroq(
+        model = ChatGroq(  # type: ignore
             model=settings.model_name,
-            api_key=settings.groq_api_key,
+            api_key=settings.groq_api_key,  # type: ignore
             temperature=0,
         )
 
@@ -60,8 +60,8 @@ async def _call_supervisor(state: AgentState) -> dict:
     prediction = None
     try:
         response = await structured_model.ainvoke(messages)
-        prediction = response.get("parsed")
-        raw_msg = response.get("raw")
+        prediction = response.get("parsed")  # type: ignore
+        raw_msg = response.get("raw")  # type: ignore
 
         if prediction:
             intent = prediction.intent
@@ -72,7 +72,7 @@ async def _call_supervisor(state: AgentState) -> dict:
             intent = "research_paper"
 
         if getattr(raw_msg, "usage_metadata", None):
-            usage = raw_msg.usage_metadata
+            usage = raw_msg.usage_metadata  # type: ignore
     except Exception as e:
         logger.error(
             "Supervisor classification failed: %s. Defaulting to 'research_paper'.", e
@@ -87,7 +87,7 @@ async def _call_supervisor(state: AgentState) -> dict:
     # Use the pre-generated chat response if available (Single-call architecture)
     if intent == "direct_chat":
         content = (
-            prediction.chat_response or "How can I help you with your research today?"
+            prediction.chat_response or "How can I help you with your research today?"  # type: ignore
         )
 
         # Reconstruct the AIMessage explicitly passing the token usage

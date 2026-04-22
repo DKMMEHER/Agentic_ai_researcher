@@ -4,7 +4,7 @@ import json
 
 from duckduckgo_search import DDGS
 from langchain_core.tools import tool
-from tavily import TavilyClient
+from tavily import TavilyClient  # type: ignore
 
 from ai_researcher.config import get_settings
 from ai_researcher.exceptions import WebSearchError

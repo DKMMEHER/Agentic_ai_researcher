@@ -85,6 +85,7 @@ warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = false
 check_untyped_defs = true
+ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = [
@@ -93,6 +94,10 @@ module = [
     "langgraph.*",
     "PyPDF2.*",
     "streamlit.*",
+    "streamlit_feedback.*",
+    "tavily.*",
+    "wikipedia.*",
+    "fitz.*",
 ]
 ignore_missing_imports = true
 

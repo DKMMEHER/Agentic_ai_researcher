@@ -47,7 +47,7 @@ def _run_cli():
         input_data = {"messages": messages}
 
         try:
-            for s in graph.stream(input_data, config, stream_mode="values"):
+            for s in graph.stream(input_data, config, stream_mode="values"):  # type: ignore
                 message = s["messages"][-1]
                 if hasattr(message, "content") and message.content:
                     (
@@ -62,7 +62,7 @@ def _run_cli():
                         message.pretty_print()
 
             # --- Human-in-the-Loop: check for review interrupt ---
-            state_snapshot = graph.get_state(config)
+            state_snapshot = graph.get_state(config)  # type: ignore
             while state_snapshot.next and "human_review" in state_snapshot.next:
                 print("\n" + "=" * 50)
                 print("📋 RESEARCH COMPLETE — Your Review Required")
@@ -77,14 +77,14 @@ def _run_cli():
                     choice = "x"
 
                 if choice in ("a", "approve", "y", "yes"):
-                    graph.update_state(config, {"human_approval": "approved"})
+                    graph.update_state(config, {"human_approval": "approved"})  # type: ignore
                 elif choice in ("r", "revise"):
                     try:
                         instructions = input("Revision instructions: ").strip()
                     except (EOFError, KeyboardInterrupt):
                         instructions = ""
                     graph.update_state(
-                        config,
+                        config,  # type: ignore
                         {
                             "human_approval": "revise",
                             "revision_instructions": instructions
@@ -92,8 +92,8 @@ def _run_cli():
                         },
                     )
                 elif choice in ("x", "abort", "n", "no"):
-                    graph.update_state(config, {"human_approval": "abort"})
-                    for _ in graph.stream(None, config, stream_mode="values"):
+                    graph.update_state(config, {"human_approval": "abort"})  # type: ignore
+                    for _ in graph.stream(None, config, stream_mode="values"):  # type: ignore
                         pass
                     print("\n🛑 Research aborted.")
                     break
@@ -102,7 +102,7 @@ def _run_cli():
                     continue
 
                 # Resume the graph and stream output
-                for s in graph.stream(None, config, stream_mode="values"):
+                for s in graph.stream(None, config, stream_mode="values"):  # type: ignore
                     message = s["messages"][-1]
                     if hasattr(message, "content") and message.content:  # noqa: SIM102
                         if hasattr(message, "tool_calls") or not hasattr(
@@ -111,7 +111,7 @@ def _run_cli():
                             message.pretty_print()
 
                 # Check for another interrupt (revision cycle)
-                state_snapshot = graph.get_state(config)
+                state_snapshot = graph.get_state(config)  # type: ignore
 
         except Exception as e:
             logger.exception("Error during agent execution")

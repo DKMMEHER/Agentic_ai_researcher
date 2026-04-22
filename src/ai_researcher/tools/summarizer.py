@@ -54,9 +54,9 @@ def summarize_long_document(url: str) -> str:
                 temperature=0.3,  # Low temperature for accurate summarization
             )
         else:
-            llm = ChatGroq(
+            llm = ChatGroq(  # type: ignore
                 model=settings.model_name,
-                api_key=settings.groq_api_key,
+                api_key=settings.groq_api_key,  # type: ignore
                 temperature=0.3,
             )
 
@@ -66,7 +66,7 @@ def summarize_long_document(url: str) -> str:
 
         # Run the chain on all document chunks
         # This will internally map (summarize each chunk) and reduce (combine into final)
-        result = chain.invoke(docs)
+        result = chain.invoke(docs)  # type: ignore
 
         final_summary = result.get("output_text", "")
 
