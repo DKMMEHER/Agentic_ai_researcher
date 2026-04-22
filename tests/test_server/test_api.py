@@ -131,7 +131,9 @@ class TestSubmitAction:
 class TestStreaming:
     """Tests for the SSE streaming endpoint."""
 
-    @pytest.mark.skip(reason="SSE async generator heavily mocked; fails string buffering in TestClient env")
+    @pytest.mark.skip(
+        reason="SSE async generator heavily mocked; fails string buffering in TestClient env"
+    )
     @patch("ai_researcher.server.main.get_session")
     def test_stream_research_returns_sse(
         self, mock_get_session, test_client, mock_graph
@@ -142,7 +144,7 @@ class TestStreaming:
         with test_client.stream("GET", "/research/stream/test-thread") as response:
             assert response.status_code == 200
             assert "text/event-stream" in response.headers["content-type"]
-            
+
             content = "".join(list(response.iter_text()))
             assert "event: status" in content
             assert "event: token" in content

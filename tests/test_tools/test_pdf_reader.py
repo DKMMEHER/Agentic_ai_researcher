@@ -118,7 +118,8 @@ class TestReadPdf:
         mock_doc = MagicMock()
         mock_doc.__iter__.return_value = [mock_page]
         mock_doc.extract_image.side_effect = lambda xref: (
-            {"width": 50, "height": 50, "image": b"fake", "ext": "png"} if xref == 1 
+            {"width": 50, "height": 50, "image": b"fake", "ext": "png"}
+            if xref == 1
             else {"width": 250, "height": 250, "image": b"fake", "ext": "png"}
         )
         mock_fitz_open.return_value = mock_doc
