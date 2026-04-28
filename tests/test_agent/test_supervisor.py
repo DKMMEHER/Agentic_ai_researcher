@@ -51,9 +51,7 @@ class TestCallSupervisor:
         "ai_researcher.agent.supervisor.load_prompt",
         return_value="You are a supervisor.",
     )
-    def test_classifies_research_paper(
-        self, mock_prompt, mock_llm_class, make_state
-    ):
+    def test_classifies_research_paper(self, mock_prompt, mock_llm_class, make_state):
         """When the LLM returns research_paper intent, the state is updated correctly."""
         mock_model = MagicMock()
         mock_llm_class.return_value = mock_model
@@ -77,9 +75,7 @@ class TestCallSupervisor:
         "ai_researcher.agent.supervisor.load_prompt",
         return_value="You are a supervisor.",
     )
-    def test_classifies_direct_chat(
-        self, mock_prompt, mock_llm_class, make_state
-    ):
+    def test_classifies_direct_chat(self, mock_prompt, mock_llm_class, make_state):
         """When the LLM returns direct_chat, the state includes an AIMessage response."""
         mock_model = MagicMock()
         mock_llm_class.return_value = mock_model
@@ -105,9 +101,7 @@ class TestCallSupervisor:
         "ai_researcher.agent.supervisor.load_prompt",
         return_value="You are a supervisor.",
     )
-    def test_defaults_on_llm_failure(
-        self, mock_prompt, mock_llm_class, make_state
-    ):
+    def test_defaults_on_llm_failure(self, mock_prompt, mock_llm_class, make_state):
         """When the LLM raises an exception, defaults to research_paper."""
         mock_model = MagicMock()
         mock_llm_class.return_value = mock_model

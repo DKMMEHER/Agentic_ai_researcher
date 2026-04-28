@@ -122,9 +122,7 @@ class TestPdfIngestion:
         mock_doc.__iter__.return_value = mock_pages
         mock_doc.close = MagicMock()
 
-        with patch(
-            "ai_researcher.tools.pdf_reader.fitz.open", return_value=mock_doc
-        ):
+        with patch("ai_researcher.tools.pdf_reader.fitz.open", return_value=mock_doc):
             result = graph.invoke(
                 {
                     "messages": [
