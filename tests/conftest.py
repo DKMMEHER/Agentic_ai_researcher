@@ -13,6 +13,7 @@ def set_test_env(monkeypatch):
     monkeypatch.setenv("LOG_LEVEL", "DEBUG")
     monkeypatch.setenv("OUTPUT_DIR", "test_output")
     monkeypatch.setenv("MODEL_NAME", "gemini-1.5-flash")
+    monkeypatch.setenv("CHECKPOINT_BACKEND", "memory")
 
 
 @pytest.fixture

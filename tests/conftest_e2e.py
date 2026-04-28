@@ -3,6 +3,11 @@
 Provides mock LLM responses, ephemeral ChromaDB, and fresh graph builders
 so that E2E tests exercise the real LangGraph routing without needing
 live API keys or network access.
+
+Strategy:
+    Patch `_create_models` and `_call_supervisor` at the graph module level
+    so that the patches remain active for the entire test, including during
+    `graph.invoke()`. This completely bypasses LLM instantiation.
 """
 
 import uuid
@@ -10,6 +15,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from langchain_core.messages import AIMessage
+
 
 # ---------------------------------------------------------------------------
 # Helper: build a mock AIMessage that looks like a tool-call response
@@ -78,71 +84,83 @@ def ephemeral_chroma():
 
 
 # ---------------------------------------------------------------------------
-# Fixture: mock LLM factory
-# ---------------------------------------------------------------------------
-
-
-@pytest.fixture()
-def mock_llm_factory():
-    """Factory that returns a mock ChatGroq whose responses you control.
-
-    Usage in tests::
-
-        mock_model = mock_llm_factory([
-            make_tool_call_message("arxiv_search", {"topic": "transformers"}),
-            make_plain_message("Here are the results..."),
-        ])
-    """
-
-    def _factory(responses: list[AIMessage]):
-        model = MagicMock()
-        model.invoke = MagicMock(side_effect=responses)
-        # bind_tools should return itself (the graph calls bind_tools once)
-        model.bind_tools = MagicMock(return_value=model)
-        return model
-
-    return _factory
-
-
-# ---------------------------------------------------------------------------
 # Fixture: build a fresh graph with a mocked LLM
 # ---------------------------------------------------------------------------
 
 
 @pytest.fixture()
-def build_e2e_graph(mock_llm_factory):
+def build_e2e_graph():
     """Build a real LangGraph agent graph with a mocked LLM.
 
-    Returns a factory callable:
-        graph, config = build_e2e_graph(responses=[...])
+    Returns a factory callable that yields (graph, config).
+    The patches remain active for the lifetime of the test.
 
-    Mocks both ChatGroq and ChatGoogleGenerativeAI so the graph works
-    regardless of which MODEL_NAME is configured.
+    Strategy:
+    - Patch `_create_models` → returns mock models (bypasses all LLM imports)
+    - Patch `_call_supervisor` → returns a deterministic intent
+    - Use MemorySaver for the checkpointer (no file I/O, no async)
     """
+    # Keep track of active patches so we can clean them up
+    active_patches: list = []
 
-    def _build(responses: list[AIMessage], thread_id: str | None = None):
+    def _build(
+        responses: list[AIMessage],
+        thread_id: str | None = None,
+        supervisor_intent: str = "research_paper",
+    ):
         if thread_id is None:
             thread_id = f"e2e-{uuid.uuid4().hex[:8]}"
 
-        mock_model = mock_llm_factory(responses)
+        # ── Build mock model ──────────────────────────────────────────
+        mock_model = MagicMock()
+        mock_model.invoke = MagicMock(side_effect=responses)
+        mock_model.bind_tools = MagicMock(return_value=mock_model)
 
-        # Patch both for safety, but Gemini is now primary
-        with (
-            patch(
-                "ai_researcher.agent.graph.ChatGoogleGenerativeAI",
-                return_value=mock_model,
-            ),
-            patch(
-                "ai_researcher.agent.supervisor.ChatGoogleGenerativeAI",
-                return_value=mock_model,
-            ),
-            patch("ai_researcher.agent.graph.ChatGroq", return_value=mock_model),
-            patch("ai_researcher.agent.supervisor.ChatGroq", return_value=mock_model),
-        ):
-            from ai_researcher.agent.graph import build_graph
+        # ── Build deterministic supervisor node ───────────────────────
+        def fake_supervisor(state):
+            """Deterministic supervisor that returns the specified intent."""
+            update: dict = {"intent": supervisor_intent, "current_agent": "supervisor"}
+            if supervisor_intent == "direct_chat":
+                update["messages"] = [
+                    AIMessage(
+                        content=(
+                            "Hello! I'm an AI research assistant. I can help you "
+                            "search for papers on arXiv, read PDFs, and write "
+                            "LaTeX documents. What topic would you like to explore?"
+                        )
+                    )
+                ]
+            return update
 
-            graph, config = build_graph(thread_id=thread_id)
+        # ── Patch _create_models to bypass all LLM instantiation ─────
+        def fake_create_models(_settings):
+            return mock_model, mock_model
+
+        # Start patches and keep them active
+        p1 = patch(
+            "ai_researcher.agent.graph._create_models",
+            new=fake_create_models,
+        )
+        p2 = patch(
+            "ai_researcher.agent.graph._call_supervisor",
+            new=fake_supervisor,
+        )
+        p1.start()
+        p2.start()
+        active_patches.extend([p1, p2])
+
+        from ai_researcher.agent.graph import build_graph
+        from langgraph.checkpoint.memory import MemorySaver
+
+        graph, config = build_graph(
+            thread_id=thread_id,
+            checkpointer=MemorySaver(),
+        )
 
         return graph, config
 
-    return _build
+    yield _build
+
+    # Cleanup: stop all patches after the test finishes
+    for p in active_patches:
+        p.stop()

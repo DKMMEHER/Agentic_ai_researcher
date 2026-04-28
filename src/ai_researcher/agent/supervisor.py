@@ -3,8 +3,6 @@
 from typing import Literal
 
 from langchain_core.messages import AIMessage, SystemMessage
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_groq import ChatGroq
 from pydantic import BaseModel, Field
 
 from ai_researcher.agent.prompts import load_prompt
@@ -27,11 +25,14 @@ class SupervisorOutput(BaseModel):
     )
 
 
-async def _call_supervisor(state: AgentState) -> dict:
+def _call_supervisor(state: AgentState) -> dict:
     """Classifies user intent and routes the conversation appropriately.
 
     This node acts as the traffic controller at the start of the graph.
     """
+    from langchain_google_genai import ChatGoogleGenerativeAI
+    from langchain_groq import ChatGroq
+    
     settings = get_settings()
 
     # Use a fast model for classification (Gemini Flash is preferred)
@@ -59,7 +60,7 @@ async def _call_supervisor(state: AgentState) -> dict:
     usage = None
     prediction = None
     try:
-        response = await structured_model.ainvoke(messages)
+        response = structured_model.invoke(messages)
         prediction = response.get("parsed")  # type: ignore
         raw_msg = response.get("raw")  # type: ignore
 

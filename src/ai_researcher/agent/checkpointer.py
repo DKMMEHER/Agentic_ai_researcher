@@ -33,12 +33,13 @@ def get_checkpointer(
 
     elif backend == "sqlite":
         try:
-            from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
+            from langgraph.checkpoint.sqlite import SqliteSaver
 
-            logger.info("Using AsyncSqliteSaver checkpointer (db=%s)", db_url)
-            # from_conn_string() returns an async context manager.
-            # LangGraph's graph.compile() accepts this directly.
-            return AsyncSqliteSaver.from_conn_string(db_url)
+            logger.info("Using SqliteSaver checkpointer (db=%s)", db_url)
+            # from_conn_string() returns a context manager.
+            # Passing this context manager to graph.compile() works,
+            # but we must ensure we use MemorySaver for sync-invoke tests.
+            return SqliteSaver.from_conn_string(db_url)
         except ImportError:
             logger.warning(
                 "langgraph-checkpoint-sqlite not installed. "

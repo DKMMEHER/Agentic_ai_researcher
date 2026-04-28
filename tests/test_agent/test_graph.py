@@ -130,7 +130,7 @@ class TestLoadPrompt:
 class TestBuildGraph:
     """Tests for graph building."""
 
-    @patch("ai_researcher.agent.graph.ChatGoogleGenerativeAI")
+    @patch("langchain_google_genai.ChatGoogleGenerativeAI")
     def test_graph_builds_without_error(self, mock_llm_class):
         """Test that build_graph creates a valid graph."""
         mock_model = MagicMock()
@@ -145,7 +145,7 @@ class TestBuildGraph:
         assert "configurable" in config
         assert "thread_id" in config["configurable"]
 
-    @patch("ai_researcher.agent.graph.ChatGoogleGenerativeAI")
+    @patch("langchain_google_genai.ChatGoogleGenerativeAI")
     def test_custom_thread_id(self, mock_llm_class):
         """Test that custom thread_id is passed through."""
         mock_model = MagicMock()
@@ -157,7 +157,7 @@ class TestBuildGraph:
         _, config = build_graph(thread_id="my-custom-thread")
         assert config["configurable"]["thread_id"] == "my-custom-thread"
 
-    @patch("ai_researcher.agent.graph.ChatGoogleGenerativeAI")
+    @patch("langchain_google_genai.ChatGoogleGenerativeAI")
     def test_tools_bound_exactly_once(self, mock_llm_class):
         """Verify tools are bound exactly once (not double-bound)."""
         mock_model = MagicMock()
@@ -442,15 +442,14 @@ class TestRouteAfterReview:
 class TestGuardrailHandler:
     """Tests for _guardrail_handler async node function."""
 
-    @pytest.mark.asyncio
-    async def test_generates_guardrail_message(self):
+    def test_generates_guardrail_message(self):
         """Guardrail handler produces a SystemMessage with the right content."""
         state = {
             "messages": [AIMessage(content="Trying again")],
             "current_agent": "researcher",
             "researcher_iterations": 4,
         }
-        result = await _guardrail_handler(state)
+        result = _guardrail_handler(state)
         assert len(result["messages"]) == 1
         msg = result["messages"][0]
         assert isinstance(msg, SystemMessage)
@@ -458,24 +457,22 @@ class TestGuardrailHandler:
         assert "Researcher" in msg.content
         assert result["current_agent"] == "done"
 
-    @pytest.mark.asyncio
-    async def test_writer_guardrail(self):
+    def test_writer_guardrail(self):
         """Guardrail handler works for the writer agent too."""
         state = {
             "messages": [AIMessage(content="Retrying LaTeX")],
             "current_agent": "writer",
             "writer_iterations": 4,
         }
-        result = await _guardrail_handler(state)
+        result = _guardrail_handler(state)
         assert "Writer" in result["messages"][0].content
 
-    @pytest.mark.asyncio
-    async def test_includes_error_context(self):
+    def test_includes_error_context(self):
         """Guardrail handler includes error context from the last message."""
         state = {
             "messages": [AIMessage(content="ERROR: Tectonic compilation failed")],
             "current_agent": "writer",
             "writer_iterations": 4,
         }
-        result = await _guardrail_handler(state)
+        result = _guardrail_handler(state)
         assert "Tectonic compilation failed" in result["messages"][0].content

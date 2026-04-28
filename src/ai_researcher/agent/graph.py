@@ -8,8 +8,6 @@ from typing import Literal
 
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.runnables import RunnableConfig
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_groq import ChatGroq
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.prebuilt import ToolNode
@@ -40,6 +38,9 @@ def _create_models(settings: Settings):
     """
     researcher_tools = get_researcher_tools()
     writer_tools = get_writer_tools()
+
+    from langchain_google_genai import ChatGoogleGenerativeAI
+    from langchain_groq import ChatGroq
 
     if settings.model_name.startswith("gemini"):
         base_model = ChatGoogleGenerativeAI(
@@ -79,14 +80,14 @@ def _filter_system_messages(messages: list) -> list:
     return filtered
 
 
-async def _call_researcher(state: AgentState, config: RunnableConfig) -> dict:
+def _call_researcher(state: AgentState, config: RunnableConfig) -> dict:
     """Node function: invoke the Researcher LLM."""
     settings = get_settings()
     model, _ = _create_models(settings)
     sys_msg = SystemMessage(content=load_prompt("researcher"))
 
     filtered_messages = _filter_system_messages(state.get("messages", []))
-    response = await model.ainvoke([sys_msg, *filtered_messages])
+    response = model.invoke([sys_msg, *filtered_messages])
 
     iters = state.get("researcher_iterations", 0) + 1
     return {
@@ -96,14 +97,14 @@ async def _call_researcher(state: AgentState, config: RunnableConfig) -> dict:
     }
 
 
-async def _call_writer(state: AgentState, config: RunnableConfig) -> dict:
+def _call_writer(state: AgentState, config: RunnableConfig) -> dict:
     """Node function: invoke the Writer LLM."""
     settings = get_settings()
     _, model = _create_models(settings)
     sys_msg = SystemMessage(content=load_prompt("writer"))
 
     filtered_messages = _filter_system_messages(state.get("messages", []))
-    response = await model.ainvoke([sys_msg, *filtered_messages])
+    response = model.invoke([sys_msg, *filtered_messages])
 
     iters = state.get("writer_iterations", 0) + 1
     return {
@@ -200,7 +201,7 @@ def _should_continue_writer(
     return END  # type: ignore
 
 
-async def _guardrail_handler(state: AgentState) -> dict:
+def _guardrail_handler(state: AgentState) -> dict:
     """Node function: injects a visible system message when guardrails are triggered."""
     agent = state.get("current_agent", "unknown")
     iters = state.get(f"{agent}_iterations", 0)
