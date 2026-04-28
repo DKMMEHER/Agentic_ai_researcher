@@ -32,7 +32,7 @@ def _call_supervisor(state: AgentState) -> dict:
     """
     from langchain_google_genai import ChatGoogleGenerativeAI
     from langchain_groq import ChatGroq
-    
+
     settings = get_settings()
 
     # Use a fast model for classification (Gemini Flash is preferred)

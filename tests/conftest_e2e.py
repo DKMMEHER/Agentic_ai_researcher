@@ -16,7 +16,6 @@ from unittest.mock import MagicMock, patch
 import pytest
 from langchain_core.messages import AIMessage
 
-
 # ---------------------------------------------------------------------------
 # Helper: build a mock AIMessage that looks like a tool-call response
 # ---------------------------------------------------------------------------
@@ -149,8 +148,9 @@ def build_e2e_graph():
         p2.start()
         active_patches.extend([p1, p2])
 
-        from ai_researcher.agent.graph import build_graph
         from langgraph.checkpoint.memory import MemorySaver
+
+        from ai_researcher.agent.graph import build_graph
 
         graph, config = build_graph(
             thread_id=thread_id,

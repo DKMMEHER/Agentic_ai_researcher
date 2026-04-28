@@ -1,6 +1,6 @@
 """Tests for the Supervisor agent node (intent classification)."""
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from langchain_core.messages import AIMessage, HumanMessage
