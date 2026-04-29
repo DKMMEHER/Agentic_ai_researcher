@@ -5,15 +5,15 @@
 ### 1. ARCHITECTURE & SYSTEM DESIGN
 **Q:** Can you explain the high-level architecture of your AI Researcher project?
 **A:**
-The project is built around a Multi-Agent "Assembly Line" architecture using LangGraph. It is a strictly sequential handoff system.
-- Node 1 (The Researcher): An LLM bound to research tools (DuckDuckGo, arXiv, PDF Parsers). Its job is to hunt for facts, extract data, and produce a plaintext "research_summary".
-- The Handoff: Once the Researcher hits its terminal condition ("RESEARCH COMPLETE"), LangGraph automatically routes the state to the Writer agent.
-- Node 2 (The Writer): An LLM securely restricted to one tool: a LaTeX compiler. It reads the research summary and generates perfectly formatted LaTeX code, rendering it directly to a PDF.
+The project is built around a Multi-Agent "Supervisor Pattern" architecture using LangGraph.
+- Node 1 (The Supervisor): Acts as the intelligent brain and router. It analyzes the user's input and dynamically decides which specialist agent to invoke next.
+- Node 2 (The Researcher): An LLM bound to research tools (DuckDuckGo, arXiv, PDF Parsers). Its job is to hunt for facts, extract data, and produce a plaintext "research_summary". Once complete, it hands control back to the Supervisor.
+- Node 3 (The Writer): An LLM securely restricted to one tool: a LaTeX compiler. When routed by the Supervisor, it reads the research summary and generates perfectly formatted LaTeX code, rendering it directly to a PDF.
 
-**Q:** Why did you choose a Multi-Agent Sequential Handoff pattern over a Single-Agent (ReAct) or Supervisor pattern?
+**Q:** Why did you choose a Multi-Agent Supervisor Pattern over a Single-Agent (ReAct) setup?
 **A:**
-Initially, it was a Single-Agent ReAct system, but I ran into severe "Memory Pollution". The agent had to remember how to search the web AND how to dynamically format LaTeX. If the LaTeX compilation failed (e.g., missing a bracket `}`), the agent would get stuck in a debugging loop, which wasted thousands of tokens re-reading old web search results! 
-By splitting it into a Sequential Assembly Line, the Writer starts with fresh context focusing solely on typesetting, drastically improving reliability, lowering token usage, and completely eliminating role-confusion.
+Initially, it was a Single-Agent ReAct system, but I ran into severe "Memory Pollution" and high token costs. The single agent had to remember how to search the web AND how to dynamically format LaTeX. If the LaTeX compilation failed, the agent would get stuck in a debugging loop, wasting thousands of tokens re-reading old web search results.
+By splitting the system using a Supervisor, each worker agent (Researcher and Writer) receives a fresh, highly-focused context. The Supervisor intelligently orchestrates the flow, ensuring the Writer focuses solely on typesetting without being distracted by raw web data, drastically improving reliability and eliminating role-confusion.
 
 **Q:** Describe your AgentState design. How do the agents communicate?
 **A:**
@@ -24,7 +24,7 @@ I used a `TypedDict` in LangGraph for my state. It contains:
 
 **Q:** What is a LangGraph "edge" vs a "conditional edge"? Where do you use each?
 **A:**
-A regular edge (add_edge) is a deterministic, always-on connection between two nodes — for example, after researcher_tools runs, control ALWAYS returns to the researcher node. A conditional edge (add_conditional_edges) is a dynamic routing function that inspects the current state and returns the name of the NEXT node to visit. In my graph, _should_continue_researcher checks whether the last LLM message contains tool_calls; if yes it routes to researcher_tools, otherwise it routes to writer. This is what creates the ReAct loop for the researcher and the termination logic for the writer.
+A regular edge (add_edge) is a deterministic, always-on connection between two nodes — for example, after a worker agent finishes its tool execution, control ALWAYS returns to the worker node to evaluate the tool output. A conditional edge (add_conditional_edges) is a dynamic routing function that inspects the current state and returns the name of the NEXT node to visit. In my graph, the Supervisor uses a conditional edge to inspect the state and dynamically route to the `researcher`, the `writer`, or to terminate the graph (`END`) based on the user's intent. This allows for flexible, intelligent routing instead of a rigid, hardcoded path.
 
 **Q:** Why did you use MemorySaver as the checkpointer and what does it actually do?
 **A:**
@@ -79,7 +79,7 @@ PubMed uses NCBI's Entrez API which is a two-step process: first an esearch call
 
 **Q:** Why is the Writer agent only given one tool — render_latex_pdf — instead of also having web access?
 **A:**
-Tool segregation is the core principle of the assembly line. Giving the Writer web access would reintroduce memory pollution — it might try to "verify facts" by searching again and hallucinate new claims on top of the Researcher's already-vetted summary. By restricting it to render_latex_pdf only, the Writer's sole job is typesetting. It can only succeed (compile to PDF) or fail (receive a LatexRenderError and self-correct). This deterministic constraint radically improves reliability and produces consistent outputs.
+Tool segregation is a core principle of this multi-agent design. Giving the Writer web access would reintroduce memory pollution — it might try to "verify facts" by searching again and hallucinate new claims on top of the Researcher's already-vetted summary. By restricting it to render_latex_pdf only, the Writer's sole job is typesetting. It can only succeed (compile to PDF) or fail (receive a LatexRenderError and self-correct). This deterministic constraint radically improves reliability and produces consistent outputs.
 
 ### 3. PROMPT ENGINEERING & LLM CONTROL
 **Q:** Did you face hallucination issues or "tool-spamming" where the LLM called too many tools simultaneously? How did you fix it?
@@ -95,9 +95,9 @@ The LaTeX compiler crashed because the LLM wrapped its code in ```latex ``` mark
 **A:**
 I load prompts from .txt files in a /prompts directory via a load_prompt("researcher") helper in agent/prompts.py. Keeping prompts in text files rather than Python strings has several advantages: a non-developer can tune phrasing without touching code, diffs are cleaner in version control, and you can A/B test prompt versions by swapping files without redeploying. The prompts are loaded at node-call time (not at import time), so a running application can hot-reload a prompt change without restart.
 
-**Q:** What is the "RESEARCH COMPLETE" signal and why do you use natural language instead of a structured flag?
+**Q:** How does the Supervisor know when a worker agent is done?
 **A:**
-When the Researcher decides it has gathered sufficient information, it is instructed to write "RESEARCH COMPLETE" as part of its final plain-text message and then stop calling tools. The conditional edge _should_continue_researcher only checks whether tool_calls exist on the last message — if there are none, it routes to the Writer regardless of whether the phrase appears. The phrase is a human-readable convention to signal intent, but the actual graph routing is driven purely by the presence or absence of tool_calls in the LangChain AIMessage object. This is more robust than checking text content.
+When a worker agent (like the Researcher) decides it has completed its assigned sub-task, it stops calling tools and returns a final response (like a research summary). The graph's conditional logic checks whether `tool_calls` exist on the last message — if there are none, control automatically routes back to the Supervisor. The Supervisor then reads the updated state and decides if it needs to dispatch another agent (like the Writer) or if the overall user request has been fulfilled.
 
 **Q:** What temperature do you use and why? How does it affect research quality?
 **A:**
@@ -108,7 +108,7 @@ I default to temperature=0.7, configurable via the model_temperature setting in 
 **A:**
 Instead of testing the dynamic text generation, I verified the graph topology and routing using End-to-End integration tests (`test_agent_e2e.py`).
 I created a fixture (`conftest_e2e.py`) to inject mock LLMs (`unittest.mock.MagicMock`) containing hardcoded `AIMessage` paths. 
-By defining sequences of mock responses (e.g., Tool Call -> Plain Text -> Plain Text), I could assert that the graph correctly routed out of `_should_continue_researcher` and smoothly handed control into the Writer layer without hitting endless loops. It allows me to test the LangGraph infrastructure completely offline.
+By defining sequences of mock responses (e.g., Tool Call -> Plain Text -> Supervisor Routing), I could assert that the graph correctly routed back to the Supervisor and smoothly handed control to the next node (like the Writer) without hitting endless loops. It allows me to test the LangGraph infrastructure completely offline.
 
 **Q:** Explain the build_e2e_graph fixture. How does it inject a mock LLM into a real LangGraph graph?
 **A:**
@@ -124,7 +124,7 @@ It separates slow, infrastructure-heavy E2E tests from fast unit tests. In CI/CD
 
 **Q:** How do you test tool order in a multi-step chain (e.g. arxiv_search then read_pdf)?
 **A:**
-In TestMultiStepChain, after invoking the graph I extract a flat list of all tool_calls from every AIMessage in the result. I then use list.index() to find the position of "arxiv_search" and "read_pdf" in that list and assert that the arXiv index is strictly less than the PDF index. This verifies not just that both tools were called, but that the sequential ordering of the assembly line was preserved.
+In TestMultiStepChain, after invoking the graph I extract a flat list of all tool_calls from every AIMessage in the result. I then use list.index() to find the position of "arxiv_search" and "read_pdf" in that list and assert that the arXiv index is strictly less than the PDF index. This verifies not just that both tools were called, but that the intended sequential execution logic of the agent workflow was successfully orchestrated.
 
 **Q:** Beyond unit tests, how do you evaluate the actual quality of the LLM's research output?
 **A:**
