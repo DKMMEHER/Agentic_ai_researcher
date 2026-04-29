@@ -9,5 +9,7 @@ ai-researcher --mode server &
 sleep 2
 
 # Start the Streamlit UI in the foreground
-echo "📊 Starting Streamlit UI (Port 8501)..."
-exec ai-researcher --mode ui
+# Use the PORT environment variable if provided (default to 8501)
+PORT=${PORT:-8501}
+echo "📊 Starting Streamlit UI (Port $PORT)..."
+exec ai-researcher --mode ui --port "$PORT"

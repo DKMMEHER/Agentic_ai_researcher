@@ -118,27 +118,37 @@ def _run_cli():
             print(f"\n❌ Error: {e}\n")
 
 
-def _run_server(reload: bool = False):
+def _run_server(port: int = 8000, reload: bool = False):
     """Launch the FastAPI backend server."""
     import uvicorn
 
     print("\n🚀 Launching FastAPI Backend...")
-    print(f"   Host: 0.0.0.0, Port: 8000, Reload: {reload}\n")
+    print(f"   Host: 0.0.0.0, Port: {port}, Reload: {reload}\n")
 
     # Run the server using uvicorn
     uvicorn.run(
-        "ai_researcher.server.main:app", host="0.0.0.0", port=8000, reload=reload
+        "ai_researcher.server.main:app", host="0.0.0.0", port=port, reload=reload
     )
 
 
-def _run_ui():
+def _run_ui(port: int = 8501):
     """Launch the Streamlit web interface."""
     app_path = Path(__file__).parent / "ui" / "streamlit_app.py"
     print("\n🚀 Launching Streamlit UI...")
     print(f"   App: {app_path}\n")
 
     subprocess.run(
-        [sys.executable, "-m", "streamlit", "run", str(app_path)],
+        [
+            sys.executable,
+            "-m",
+            "streamlit",
+            "run",
+            str(app_path),
+            "--server.port",
+            str(port),
+            "--server.address",
+            "0.0.0.0",
+        ],
         check=True,
     )
 
@@ -167,6 +177,12 @@ def main():
         help="Auto-reload server on code changes (only for --mode server)",
     )
     parser.add_argument(
+        "--port",
+        type=int,
+        default=None,
+        help="Port to run the server or UI on (defaults: server=8000, ui=8501)",
+    )
+    parser.add_argument(
         "--log-level",
         choices=["DEBUG", "INFO", "WARNING", "ERROR"],
         default=None,
@@ -179,9 +195,9 @@ def main():
     setup_logging(level=args.log_level)
 
     if args.mode == "server":
-        _run_server(reload=args.reload)
+        _run_server(port=args.port or 8000, reload=args.reload)
     elif args.mode == "ui":
-        _run_ui()
+        _run_ui(port=args.port or 8501)
     else:
         logger.info("Starting AI Researcher in '%s' mode", args.mode)
         _run_cli()

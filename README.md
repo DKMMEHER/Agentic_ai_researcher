@@ -162,6 +162,44 @@ The `tests/eval/` directory contains logic to benchmark the LLM Agent's trajecto
 
 ---
 
+## 🚀 GCP Deployment (CI/CD)
+
+The project includes a GitHub Actions workflow for automated deployment to **Google Cloud Run**.
+
+### 1. GCP Setup
+
+1. **Enable APIs**: Enable the Cloud Run, Artifact Registry, and Cloud Build APIs in your GCP Project.
+2. **Artifact Registry**: Create a Docker repository named `ai-researcher` in your preferred region.
+3. **Service Account**: Create a Service Account with the following roles:
+   - `roles/run.admin`
+   - `roles/storage.admin` (for Artifact Registry)
+   - `roles/iam.serviceAccountUser`
+   - `roles/artifactregistry.writer`
+4. **Service Account Key**: Generate a JSON key for this service account.
+
+### 2. GitHub Secrets
+
+Add the following secrets to your GitHub repository (`Settings -> Secrets and variables -> Actions`):
+
+| Secret | Description |
+|--------|-------------|
+| `GCP_PROJECT_ID` | Your Google Cloud Project ID |
+| `GCP_SA_KEY` | The JSON key of your Service Account |
+| `GCP_REGION` | The GCP region (e.g., `us-central1`) |
+| `GROQ_API_KEY` | Your Groq API Key |
+| `GOOGLE_API_KEY` | Your Google Gemini API Key |
+| `TAVILY_API_KEY` | Your Tavily API Key |
+| `SERPER_API_KEY` | Your Serper API Key |
+
+### 3. Automated Flow
+
+1. Push to `main` or `master`.
+2. The `CI` workflow runs tests.
+3. Upon success, the `CD` workflow builds the Docker image, pushes it to GAR, and deploys it to Cloud Run.
+4. The service will be available at the URL provided in the GitHub Action logs.
+
+---
+
 ## 📄 License
 
 This project is licensed under the MIT License.
