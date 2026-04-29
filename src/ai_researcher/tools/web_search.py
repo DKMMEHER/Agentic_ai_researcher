@@ -2,7 +2,6 @@
 
 import json
 
-from duckduckgo_search import DDGS
 from langchain_core.tools import tool
 from tavily import TavilyClient  # type: ignore
 
@@ -11,35 +10,6 @@ from ai_researcher.exceptions import WebSearchError
 from ai_researcher.logging import get_logger
 
 logger = get_logger(__name__)
-
-
-@tool
-def duckduckgo_search(query: str) -> str:
-    """Searches the web via DuckDuckGo for general knowledge and recent events.
-    Use this to look up definitions, trending topics, or general context.
-
-    Args:
-        query: The search query string.
-    """
-    logger.info("Performing DuckDuckGo search for: '%s'", query)
-
-    try:
-        with DDGS() as ddgs:
-            results = list(ddgs.text(query, max_results=5))
-
-        if not results:
-            logger.warning("No DuckDuckGo results found for query: '%s'", query)
-            return "No results found."
-
-        logger.info("Found %d results on DuckDuckGo.", len(results))
-        return json.dumps(results, indent=2)
-
-    except Exception as e:
-        logger.exception("DuckDuckGo search failed for query: '%s'", query)
-        raise WebSearchError(
-            message=f"DuckDuckGo search failed: {e!s}", query=query, engine="duckduckgo"
-        ) from e
-
 
 @tool
 def tavily_search(query: str) -> str:

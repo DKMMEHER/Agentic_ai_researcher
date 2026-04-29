@@ -7,7 +7,7 @@
 **A:**
 The project is built around a Multi-Agent "Supervisor Pattern" architecture using LangGraph.
 - Node 1 (The Supervisor): Acts as the intelligent brain and router. It analyzes the user's input and dynamically decides which specialist agent to invoke next.
-- Node 2 (The Researcher): An LLM bound to research tools (DuckDuckGo, arXiv, PDF Parsers). Its job is to hunt for facts, extract data, and produce a plaintext "research_summary". Once complete, it hands control back to the Supervisor.
+- Node 2 (The Researcher): An LLM bound to research tools (Tavily, arXiv, PDF Parsers). Its job is to hunt for facts, extract data, and produce a plaintext "research_summary". Once complete, it hands control back to the Supervisor.
 - Node 3 (The Writer): An LLM securely restricted to one tool: a LaTeX compiler. When routed by the Supervisor, it reads the research summary and generates perfectly formatted LaTeX code, rendering it directly to a PDF.
 
 **Q:** Why did you choose a Multi-Agent Supervisor Pattern over a Single-Agent (ReAct) setup?
@@ -57,7 +57,7 @@ I implemented an ephemeral RAG architecture using ChromaDB. When the agent uses 
 7. The chunks are added to the "research_papers" collection.
 8. The tool returns a success string that instructs the agent to now use query_pdf, which enforces the two-step RAG protocol.
 
-**Q:** Why did you choose the all-MiniLM-L6-v2 embedding model instead of OpenAI embeddings?
+**Q:** Why did you choose the all-MiniLM-L6-v2 embedding model instead of OpenAI embeddings model like text-embedding-3-small or text-embedding-3-large , text-embedding-ada-002 and Gemini (Google Vertex AI / Google AI Studio) Embedding Models like text-embedding-004 / text-embedding-005, text-multilingual-embedding-002, gemini-embedding-001 / Gemini Embedding 2 ?
 **A:**
 all-MiniLM-L6-v2 runs locally via HuggingFace — it produces 384-dimension dense vectors and is extremely fast on CPU. Using a local embedder means zero additional API cost and zero network latency during ingestion. For a research agent where the same paper might be queried many times in one session, this is a significant saving. The quality trade-off vs OpenAI's text-embedding-3-small is minimal for scientific text retrieval tasks.
 
@@ -84,7 +84,7 @@ Tool segregation is a core principle of this multi-agent design. Giving the Writ
 ### 3. PROMPT ENGINEERING & LLM CONTROL
 **Q:** Did you face hallucination issues or "tool-spamming" where the LLM called too many tools simultaneously? How did you fix it?
 **A:**
-Yes, because Groq models (Llama 3 70B) process instructions highly literally, telling the agent to "search for information" caused it to fire 5 tools at once in parallel (e.g., arXiv, DuckDuckGo, and Semantic Scholar simultaneously). 
+Yes, because Groq models (Llama 3 70B) process instructions highly literally, telling the agent to "search for information" caused it to fire 5 tools at once in parallel (e.g., arXiv, Tavily, and Semantic Scholar simultaneously). 
 I fixed this through rigorous structural prompting. I updated `prompts/researcher.txt` with explicit rules: "DO NOT SPAM TOOLS. You MUST use ONE tool at a time sequentially. Wait for results before deciding." I also explicitly tied domains (e.g. "Biology -> pubmed_search", "AI -> arxiv_search") to restrict its decision boundaries.
 
 **Q:** How did you fix the issue where the LLM was generating markdown tags instead of raw code?

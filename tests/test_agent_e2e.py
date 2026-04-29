@@ -224,14 +224,18 @@ class TestQueryPdf:
 
 
 class TestWebSearchRouting:
-    """Verify agent routes web search queries to duckduckgo_search."""
+    """Verify agent routes web search queries to tavily_search."""
 
-    @patch("ai_researcher.tools.web_search.DDGS")
-    def test_agent_calls_duckduckgo(self, mock_ddgs_class, build_e2e_graph):
-        """'Search the web for...' → duckduckgo_search is called."""
+    @patch("ai_researcher.tools.web_search.get_settings")
+    @patch("ai_researcher.tools.web_search.TavilyClient")
+    def test_agent_calls_tavily(self, mock_tavily_class, mock_settings, build_e2e_graph):
+        """'Search the web for...' → tavily_search is called."""
+        # Mock settings
+        mock_settings.return_value.tavily_api_key = "fake_key"
+
         responses = [
             make_tool_call_message(
-                "duckduckgo_search",
+                "tavily_search",
                 {"query": "latest breakthroughs in quantum computing 2025"},
             ),
             make_plain_message("Here is what I found about quantum computing..."),
@@ -239,18 +243,18 @@ class TestWebSearchRouting:
         ]
         graph, config = build_e2e_graph(responses=responses)
 
-        # Mock DuckDuckGo search
-        mock_ddgs_instance = MagicMock()
-        mock_ddgs_instance.__enter__ = MagicMock(return_value=mock_ddgs_instance)
-        mock_ddgs_instance.__exit__ = MagicMock(return_value=False)
-        mock_ddgs_instance.text.return_value = [
-            {
-                "title": "Quantum Computing Breakthrough",
-                "href": "https://example.com/quantum",
-                "body": "Researchers have achieved a major breakthrough...",
-            }
-        ]
-        mock_ddgs_class.return_value = mock_ddgs_instance
+        # Mock Tavily search
+        mock_tavily_instance = MagicMock()
+        mock_tavily_instance.search.return_value = {
+            "results": [
+                {
+                    "title": "Quantum Computing Breakthrough",
+                    "url": "https://example.com/quantum",
+                    "content": "Researchers have achieved a major breakthrough...",
+                }
+            ]
+        }
+        mock_tavily_class.return_value = mock_tavily_instance
 
         result = graph.invoke(
             {
@@ -271,7 +275,8 @@ class TestWebSearchRouting:
             if getattr(m, "tool_calls", None)
             for tc in m.tool_calls
         ]
-        assert "duckduckgo_search" in tool_call_names
+        assert "tavily_search" in tool_call_names
+
 
 
 # =========================================================================

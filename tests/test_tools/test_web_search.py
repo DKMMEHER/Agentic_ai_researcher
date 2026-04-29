@@ -7,53 +7,8 @@ import pytest
 
 from ai_researcher.tools.web_search import (
     WebSearchError,
-    duckduckgo_search,
     tavily_search,
 )
-
-
-class TestDuckDuckGoSearch:
-    """Tests for DuckDuckGo search tool."""
-
-    @patch("ai_researcher.tools.web_search.DDGS", create=True)
-    def test_successful_search(self, mock_ddgs_class):
-        """Test a normal successful DuckDuckGo search."""
-        # Setup mock context manager
-        mock_ddgs = MagicMock()
-        mock_ddgs_class.return_value.__enter__.return_value = mock_ddgs
-
-        # Mock text search results
-        mock_results = [
-            {"title": "Result 1", "href": "url1", "body": "Snippet 1"},
-            {"title": "Result 2", "href": "url2", "body": "Snippet 2"},
-        ]
-        mock_ddgs.text.return_value = mock_results
-
-        result_str = duckduckgo_search.invoke({"query": "langgraph"})
-        results = json.loads(result_str)
-
-        assert len(results) == 2
-        assert results[0]["title"] == "Result 1"
-        assert results[1]["body"] == "Snippet 2"
-
-    @patch("ai_researcher.tools.web_search.DDGS", create=True)
-    def test_no_results_found(self, mock_ddgs_class):
-        """Test behavior when DuckDuckGo returns no results."""
-        mock_ddgs = MagicMock()
-        mock_ddgs_class.return_value.__enter__.return_value = mock_ddgs
-        mock_ddgs.text.return_value = []
-
-        result = duckduckgo_search.invoke({"query": "nonexistent"})
-        assert result == "No results found."
-
-    @patch("ai_researcher.tools.web_search.DDGS", create=True)
-    def test_error_raises_websearcherror(self, mock_ddgs_class):
-        """Test that errors in DDGS raise WebSearchError."""
-        mock_ddgs_class.side_effect = Exception("Service Unavailable")
-
-        with pytest.raises(WebSearchError) as excinfo:
-            duckduckgo_search.invoke({"query": "test"})
-        assert "DuckDuckGo search failed" in str(excinfo.value)
 
 
 class TestTavilySearch:
