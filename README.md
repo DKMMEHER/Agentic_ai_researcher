@@ -6,6 +6,15 @@ An **agentic AI system** built with [LangGraph](https://langchain-ai.github.io/l
 
 ---
 
+## 📈 Recent Updates
+
+- **CI/CD Automation**: Fully automated deployment pipeline to Google Cloud Run via GitHub Actions (`ci.yml` and `cd.yml`).
+- **Unified Container**: Consolidated the FastAPI backend and Streamlit UI into a single Cloud Run-compatible Docker container with dynamic port binding.
+- **Test Suite Stabilization**: Achieved highly stable E2E testing by implementing robust module-level mocks for LLM instantiation and isolating the LangGraph checkpointer.
+- **GCP Ready**: Added comprehensive instructions and configurations for deploying using Google Workload Identity or Service Accounts, Artifact Registry, and Cloud Run.
+
+---
+
 ## ✨ Features
 
 | Feature | Description |
