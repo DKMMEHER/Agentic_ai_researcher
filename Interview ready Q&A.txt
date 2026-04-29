@@ -44,12 +44,12 @@ I call load_prompt() inside each node function (_call_researcher and _call_write
 ------------------------------------------------------------------------
 **Q:** How does the PDF reading tool work? How do you prevent context window exhaustion?
 **A:**
-I implemented an ephemeral RAG architecture using ChromaDB. When the agent uses `read_pdf`, the system fetches the PDF, chunks its text using PyPDF2, and embeds it into an in-memory Chroma Vector Database. The agent is strictly commanded NOT to read the whole PDF at once. Instead, it must subsequently use the `query_pdf` tool to semantically search the vector store for concise, highly relevant excerpts.
+I implemented an ephemeral RAG architecture using ChromaDB. When the agent uses `read_pdf`, the system fetches the PDF, chunks its text using PyMuPDF (fitz), and embeds it into an in-memory Chroma Vector Database. The agent is strictly commanded NOT to read the whole PDF at once. Instead, it must subsequently use the `query_pdf` tool to semantically search the vector store for concise, highly relevant excerpts.
 
 **Q:** Walk me through the exact steps when an agent calls read_pdf on an arXiv paper URL.
 **A:**
 1. requests.get() downloads the raw PDF bytes with a configurable timeout (pdf_request_timeout from config).
-2. PyPDF2.PdfReader extracts text page-by-page and joins them into a single string.
+2. PyMuPDF (via `fitz.open()`) extracts text page-by-page and joins them into a single string.
 3. An MD5 hash of the URL is computed as a doc_id to allow deduplication later.
 4. RecursiveCharacterTextSplitter splits the text into 1000-character chunks with 200-character overlap, preserving sentence boundaries.
 5. Each chunk is wrapped in a LangChain Document with metadata {source: url, doc_id: hash}.
@@ -116,7 +116,7 @@ The conftest_e2e.py fixture creates a MagicMock LLM whose .invoke() method is sc
 
 **Q:** How did you test the ChromaDB ingestion in TestPdfIngestion without doing a real PDF download?
 **A:**
-I used a two-layer mock: (1) I patched requests.get to return a MagicMock whose .content attribute holds fake PDF bytes (b"%PDF-fake"), and (2) I patched PyPDF2.PdfReader to return a mock object with fake .pages returning pre-written sentences. This means the text chunking, Document creation, MD5 hashing, and ChromaDB upsert all run against real code. After the graph.invoke() call I query the ephemeral_chroma fixture (an isolated in-memory Chroma instance) with similarity_search and assert that chunks landed in the database, proving the full ingestion pipeline worked correctly.
+I used a two-layer mock: (1) I patched requests.get to return a MagicMock whose .content attribute holds fake PDF bytes (b"%PDF-fake"), and (2) I patched PyMuPDF (`fitz.open`) to return a mock document object with fake pages returning pre-written sentences. This means the text chunking, Document creation, MD5 hashing, and ChromaDB upsert all run against real code. After the graph.invoke() call I query the ephemeral_chroma fixture (an isolated in-memory Chroma instance) with similarity_search and assert that chunks landed in the database, proving the full ingestion pipeline worked correctly.
 
 **Q:** What is the purpose of the @pytest.mark.e2e marker?
 **A:**
