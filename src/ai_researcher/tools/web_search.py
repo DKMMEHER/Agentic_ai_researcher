@@ -11,6 +11,7 @@ from ai_researcher.logging import get_logger
 
 logger = get_logger(__name__)
 
+
 @tool
 def tavily_search(query: str) -> str:
     """Searches the web via Tavily for deep, AI-optimized research information.

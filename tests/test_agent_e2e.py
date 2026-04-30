@@ -228,7 +228,9 @@ class TestWebSearchRouting:
 
     @patch("ai_researcher.tools.web_search.get_settings")
     @patch("ai_researcher.tools.web_search.TavilyClient")
-    def test_agent_calls_tavily(self, mock_tavily_class, mock_settings, build_e2e_graph):
+    def test_agent_calls_tavily(
+        self, mock_tavily_class, mock_settings, build_e2e_graph
+    ):
         """'Search the web for...' → tavily_search is called."""
         # Mock settings
         mock_settings.return_value.tavily_api_key = "fake_key"
@@ -276,7 +278,6 @@ class TestWebSearchRouting:
             for tc in m.tool_calls
         ]
         assert "tavily_search" in tool_call_names
-
 
 
 # =========================================================================
