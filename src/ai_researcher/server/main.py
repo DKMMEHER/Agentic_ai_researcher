@@ -94,7 +94,6 @@ async def health_check():
 active_sessions = {}
 
 
-
 def get_session(request: Request, thread_id: str):
     """Retrieve or create a graph session for a thread.
 
