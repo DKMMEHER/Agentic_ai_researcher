@@ -148,6 +148,8 @@ def _run_ui(port: int = 8501):
             str(port),
             "--server.address",
             "0.0.0.0",
+            "--server.headless",
+            "true",
         ],
         check=True,
     )

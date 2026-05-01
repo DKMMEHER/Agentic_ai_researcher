@@ -12,14 +12,21 @@ BACKEND_PID=$!
 
 # Wait for FastAPI to become healthy before starting Streamlit
 echo "⏳ Waiting for FastAPI to be ready..."
+FASTAPI_READY=false
 for i in $(seq 1 15); do
   if wget -q -O - http://localhost:8000/health > /dev/null 2>&1; then
     echo "✅ FastAPI is ready!"
+    FASTAPI_READY=true
     break
   fi
   echo "  Attempt $i/15 — retrying in 2s..."
   sleep 2
 done
+
+if [ "$FASTAPI_READY" = false ]; then
+  echo "❌ FastAPI failed to start within 30 seconds. Exiting..."
+  exit 1
+fi
 
 # Start the Streamlit UI in the foreground on Cloud Run's expected port
 echo "📊 Starting Streamlit UI (Port $UI_PORT)..."
