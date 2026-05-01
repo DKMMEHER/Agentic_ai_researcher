@@ -1,6 +1,7 @@
-"""Long-Document Map-Reduce Summarizer tool."""
+"""Long-Document Map-Reduce Summarizer tool using LCEL."""
 
-from langchain.chains.summarize import load_summarize_chain
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.tools import tool
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_groq import ChatGroq
@@ -10,6 +11,21 @@ from ai_researcher.logging import get_logger
 from ai_researcher.tools.db import get_vector_store
 
 logger = get_logger(__name__)
+
+# --- Prompts ---
+MAP_PROMPT = ChatPromptTemplate.from_template(
+    "Write a concise summary of the following section of a research document:\n\n"
+    "{context}\n\n"
+    "CONCISE SUMMARY:"
+)
+
+REDUCE_PROMPT = ChatPromptTemplate.from_template(
+    "The following are summaries of different sections of a research document:\n\n"
+    "{summaries}\n\n"
+    "Based on these summaries, write a comprehensive executive summary that captures "
+    "the main themes, key findings, and technical contributions of the entire document.\n\n"
+    "EXECUTIVE SUMMARY:"
+)
 
 
 @tool
@@ -24,15 +40,11 @@ def summarize_long_document(url: str) -> str:
         url: The URL of the PDF document that was previously ingested.
     """
     settings = get_settings()
-    logger.info("Initializing Map-Reduce Summarizer for URL: %s", url)
+    logger.info("Initializing LCEL Map-Reduce Summarizer for URL: %s", url)
 
     try:
         vector_store = get_vector_store()
-
-        # We need to manually pull the chunks out of Chroma.
-        # Since Chroma in LangChain doesn't easily let us fetch just by exact metadata match
-        # without a similarity query, we perform a dummy similarity search that fetches a huge amount
-        # and pre-filters by source=url. We request k=1000 since it's a huge document.
+        # Retrieve chunks for this URL
         docs = vector_store.similarity_search("summary", k=1000, filter={"source": url})
 
         if not docs:
@@ -42,16 +54,14 @@ def summarize_long_document(url: str) -> str:
                 "Did you forget to call `read_pdf` on it first?"
             )
 
-        logger.info(
-            "Retrieved %d document chunks for Map-Reduce processing.", len(docs)
-        )
+        logger.info("Retrieved %d document chunks for Map-Reduce processing.", len(docs))
 
-        # Instantiate a raw LLM without tools for pure reasoning
+        # Instantiate LLM
         if settings.model_name.startswith("gemini"):
             llm = ChatGoogleGenerativeAI(
                 model=settings.model_name,
                 google_api_key=settings.gemini_api_key,
-                temperature=0.3,  # Low temperature for accurate summarization
+                temperature=0.3,
             )
         else:
             llm = ChatGroq(  # type: ignore
@@ -60,18 +70,27 @@ def summarize_long_document(url: str) -> str:
                 temperature=0.3,
             )
 
-        # Execute the Map-Reduce Chain
-        logger.info("Starting map-reduce chain execution...")
-        chain = load_summarize_chain(llm, chain_type="map_reduce")
+        # --- LCEL Map Step ---
+        map_chain = MAP_PROMPT | llm | StrOutputParser()
+        
+        logger.info("Executing Map step (summarizing chunks)...")
+        # Process chunks in batches to avoid rate limits or context window issues
+        summaries = []
+        for i, doc in enumerate(docs):
+            if i % 10 == 0:
+                logger.info("  Processing chunk %d/%d...", i + 1, len(docs))
+            summary = map_chain.invoke({"context": doc.page_content})
+            summaries.append(summary)
 
-        # Run the chain on all document chunks
-        # This will internally map (summarize each chunk) and reduce (combine into final)
-        result = chain.invoke(docs)  # type: ignore
-
-        final_summary = result.get("output_text", "")
+        # --- LCEL Reduce Step ---
+        logger.info("Executing Reduce step (combining summaries)...")
+        combined_summaries_text = "\n\n".join(summaries)
+        reduce_chain = REDUCE_PROMPT | llm | StrOutputParser()
+        
+        final_summary = reduce_chain.invoke({"summaries": combined_summaries_text})
 
         if not final_summary:
-            return "Error: Map-Reduce chain failed to generate a summary."
+            return "Error: Failed to generate a summary."
 
         logger.info("Map-reduce summarization completed successfully.")
         return f"--- EXECUTIVE SUMMARY OF {url} ---\n\n{final_summary}"

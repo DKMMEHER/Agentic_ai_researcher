@@ -33,6 +33,16 @@ RUN tectonic --version
 # Copy the rest of the application
 COPY . .
 
+# Install core dependencies explicitly to ensure correct versioning and availability
+RUN pip install --no-cache-dir \
+    langchain \
+    langchain-community \
+    langchain-core \
+    langchain-google-genai \
+    langchain-groq \
+    langgraph \
+    langgraph-checkpoint-sqlite
+
 # Install the package itself
 RUN pip install --no-cache-dir .
 
