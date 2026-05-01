@@ -14,7 +14,7 @@ BACKEND_PID=$!
 echo "⏳ Waiting for FastAPI to be ready..."
 FASTAPI_READY=false
 for i in $(seq 1 15); do
-  if wget -q -O - http://127.0.0.1:8000/health > /dev/null 2>&1; then
+  if wget --timeout=2 -q -O - http://127.0.0.1:8000/health > /dev/null 2>&1; then
     echo "✅ FastAPI is ready!"
     FASTAPI_READY=true
     break
