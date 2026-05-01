@@ -150,6 +150,8 @@ def _run_ui(port: int = 8501):
             "0.0.0.0",
             "--server.headless",
             "true",
+            "--browser.gatherUsageStats",
+            "false",
         ],
         check=True,
     )
