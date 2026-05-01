@@ -54,7 +54,9 @@ def summarize_long_document(url: str) -> str:
                 "Did you forget to call `read_pdf` on it first?"
             )
 
-        logger.info("Retrieved %d document chunks for Map-Reduce processing.", len(docs))
+        logger.info(
+            "Retrieved %d document chunks for Map-Reduce processing.", len(docs)
+        )
 
         # Instantiate LLM
         if settings.model_name.startswith("gemini"):
