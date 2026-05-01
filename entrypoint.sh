@@ -13,7 +13,7 @@ BACKEND_PID=$!
 # Wait for FastAPI to become healthy before starting Streamlit
 echo "⏳ Waiting for FastAPI to be ready..."
 for i in $(seq 1 15); do
-  if curl -sf http://localhost:8000/health > /dev/null 2>&1; then
+  if wget -q -O - http://localhost:8000/health > /dev/null 2>&1; then
     echo "✅ FastAPI is ready!"
     break
   fi
