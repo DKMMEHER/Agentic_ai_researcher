@@ -61,7 +61,8 @@ jobs:
           BACKEND_URL=http://localhost:8000
           CHECKPOINT_BACKEND=sqlite
           OUTPUT_DIR=/app/output
-        flags: '--allow-unauthenticated --memory=2Gi --cpu=1'
+          PORT=8501
+        flags: '--allow-unauthenticated --memory=2Gi --cpu=1 --port=8501'
 
     - name: Show Output URL
       run: echo "🚀 Deployed successfully to ${{ steps.deploy.outputs.url }}"

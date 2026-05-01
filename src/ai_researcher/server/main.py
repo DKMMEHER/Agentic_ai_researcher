@@ -83,8 +83,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for Cloud Run and load balancers."""
+    return {"status": "ok"}
+
+
 # Global store for active graph instances (shared compiled graph per thread)
 active_sessions = {}
+
 
 
 def get_session(request: Request, thread_id: str):
