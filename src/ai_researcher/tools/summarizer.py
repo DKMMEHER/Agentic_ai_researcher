@@ -72,7 +72,7 @@ def summarize_long_document(url: str) -> str:
 
         # --- LCEL Map Step ---
         map_chain = MAP_PROMPT | llm | StrOutputParser()
-        
+
         logger.info("Executing Map step (summarizing chunks)...")
         # Process chunks in batches to avoid rate limits or context window issues
         summaries = []
@@ -86,7 +86,7 @@ def summarize_long_document(url: str) -> str:
         logger.info("Executing Reduce step (combining summaries)...")
         combined_summaries_text = "\n\n".join(summaries)
         reduce_chain = REDUCE_PROMPT | llm | StrOutputParser()
-        
+
         final_summary = reduce_chain.invoke({"summaries": combined_summaries_text})
 
         if not final_summary:
