@@ -27,9 +27,14 @@ st.set_page_config(
 
 def _initialize_agent():
     """Initialize the API client and config in session state."""
-    # Ensure every browser session gets a unique ID
+    # Try to load session ID from URL query params (survives refresh)
     if "session_id" not in st.session_state:
-        st.session_state.session_id = str(uuid.uuid4())
+        if "thread" in st.query_params:
+            st.session_state.session_id = st.query_params["thread"]
+        else:
+            new_id = str(uuid.uuid4())
+            st.session_state.session_id = new_id
+            st.query_params["thread"] = new_id
 
     if "client" not in st.session_state:
         from ai_researcher.logging import setup_logging
@@ -153,19 +158,31 @@ def _render_sidebar():
                     st.text(f"  {tool_name}: {count}x")
         st.markdown("---")
 
-        if st.button("🗑️ Clear Chat", use_container_width=True):
-            st.session_state.chat_history = []
-            st.session_state.pdf_paths = []
-            st.session_state.awaiting_approval = False
-            st.session_state.show_revision_input = False
-            st.session_state.pop("resume_decision", None)
-            st.session_state.pop("revision_instructions", None)
-            st.session_state.total_input_tokens = 0
-            st.session_state.total_output_tokens = 0
-            st.session_state.tool_counts = {}
-            # Rotate the thread ID to completely reset agent memory on the backend
-            st.session_state.session_id = str(uuid.uuid4())
-            st.rerun()
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("🗑️ Clear Screen", use_container_width=True):
+                st.session_state.chat_history = []
+                st.session_state.pdf_paths = []
+                st.session_state.awaiting_approval = False
+                st.session_state.show_revision_input = False
+                st.rerun()
+
+        with col2:
+            if st.button("🔥 Wipe Memory", use_container_width=True, type="primary"):
+                st.session_state.chat_history = []
+                st.session_state.pdf_paths = []
+                st.session_state.awaiting_approval = False
+                st.session_state.show_revision_input = False
+                st.session_state.pop("resume_decision", None)
+                st.session_state.pop("revision_instructions", None)
+                st.session_state.total_input_tokens = 0
+                st.session_state.total_output_tokens = 0
+                st.session_state.tool_counts = {}
+                # Rotate the thread ID to completely reset agent memory on the backend
+                new_id = str(uuid.uuid4())
+                st.session_state.session_id = new_id
+                st.query_params["thread"] = new_id
+                st.rerun()
 
         # Show generated PDFs
         if st.session_state.pdf_paths:
