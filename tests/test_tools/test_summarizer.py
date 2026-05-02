@@ -30,7 +30,7 @@ class TestSummarizeLongDocument:
         # Mock LLM instances
         mock_gemini = MagicMock(spec=ChatGoogleGenerativeAI)
         mock_groq = MagicMock(spec=ChatGroq)
-        
+
         # Configure both mocks to return the same sequence
         test_summaries = [
             "Summary 1",
@@ -39,7 +39,7 @@ class TestSummarizeLongDocument:
         ]
         mock_gemini.invoke.side_effect = test_summaries
         mock_groq.invoke.side_effect = test_summaries
-        
+
         mock_gemini_class.return_value = mock_gemini
         mock_groq_class.return_value = mock_groq
 
