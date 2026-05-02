@@ -19,6 +19,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libssl-dev \
     zlib1g \
     build-essential \
+    procps \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Tectonic (LaTeX engine)
@@ -63,6 +64,9 @@ RUN chmod +x entrypoint.sh
 # 8000: FastAPI
 # 8501: Streamlit
 EXPOSE 8000 8501
+
+# Build-time verification: ensures all dependencies are present and imports work
+RUN python -m ai_researcher.cli --help > /dev/null
 
 # Entrypoint to run both backend and frontend
 CMD ["./entrypoint.sh"]

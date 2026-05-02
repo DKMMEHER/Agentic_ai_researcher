@@ -13,7 +13,7 @@ echo "---------------------------"
 
 # Start the FastAPI backend in the background on port 8000
 echo "🚀 Starting FastAPI Backend (Port 8000)..."
-python -m ai_researcher.cli --mode server > /dev/stdout 2> /dev/stderr &
+python -m ai_researcher.cli --mode server &
 BACKEND_PID=$!
 
 # Wait for FastAPI to become healthy before starting Streamlit
