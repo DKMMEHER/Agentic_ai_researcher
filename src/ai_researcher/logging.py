@@ -16,6 +16,7 @@ def setup_logging(level: str | None = None) -> None:
     if level is None:
         try:
             from ai_researcher.config import get_settings
+
             level = get_settings().log_level
         except Exception:
             level = "INFO"
