@@ -56,7 +56,11 @@ def _call_supervisor(state: AgentState) -> dict:
     sys_prompt = load_prompt("supervisor")
     messages = [SystemMessage(content=sys_prompt)] + state["messages"]
 
-    logger.info("Supervisor classifying query...")
+    logger.info(
+        "Supervisor classifying query... (state has %d messages, total %d with system prompt)",
+        len(state["messages"]),
+        len(messages),
+    )
     usage = None
     prediction = None
     try:

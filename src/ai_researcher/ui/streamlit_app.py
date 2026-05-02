@@ -160,11 +160,11 @@ def _render_sidebar():
             st.session_state.show_revision_input = False
             st.session_state.pop("resume_decision", None)
             st.session_state.pop("revision_instructions", None)
-            # Optionally rotate the thread ID to completely reset agent memory
+            st.session_state.total_input_tokens = 0
+            st.session_state.total_output_tokens = 0
+            st.session_state.tool_counts = {}
+            # Rotate the thread ID to completely reset agent memory on the backend
             st.session_state.session_id = str(uuid.uuid4())
-            st.session_state.config["configurable"]["thread_id"] = (
-                st.session_state.session_id
-            )
             st.rerun()
 
         # Show generated PDFs
