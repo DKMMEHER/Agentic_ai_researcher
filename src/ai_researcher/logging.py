@@ -12,22 +12,15 @@ from pathlib import Path
 def setup_logging(level: str | None = None) -> None:
     """Configure structured logging for the entire application.
 
-    Args:
-        level: Log level string (DEBUG, INFO, WARNING, ERROR, CRITICAL).
-               If None, reads from settings.
+    In containerized environments (like Cloud Run), we only log to the console (stdout/stderr).
+    Google Cloud Logging automatically captures these logs.
     """
     if level is None:
-        from ai_researcher.config import get_settings
-
-        level = get_settings().log_level
-
-    # Determine project root and create logs directory
-    project_root = Path(__file__).resolve().parent.parent.parent
-    logs_dir = project_root / "logs"
-    logs_dir.mkdir(exist_ok=True)
-
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    log_file_path = str(logs_dir / f"ai_researcher_{timestamp}.log")
+        try:
+            from ai_researcher.config import get_settings
+            level = get_settings().log_level
+        except Exception:
+            level = "INFO"
 
     config = {
         "version": 1,
@@ -35,13 +28,6 @@ def setup_logging(level: str | None = None) -> None:
         "formatters": {
             "standard": {
                 "format": "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
-                "datefmt": "%Y-%m-%d %H:%M:%S",
-            },
-            "detailed": {
-                "format": (
-                    "%(asctime)s | %(levelname)-8s | %(name)s | "
-                    "%(filename)s:%(lineno)d | %(funcName)s | %(message)s"
-                ),
                 "datefmt": "%Y-%m-%d %H:%M:%S",
             },
         },
@@ -52,20 +38,11 @@ def setup_logging(level: str | None = None) -> None:
                 "formatter": "standard",
                 "stream": "ext://sys.stdout",
             },
-            "file": {
-                "class": "logging.handlers.RotatingFileHandler",
-                "level": "DEBUG",
-                "formatter": "detailed",
-                "filename": log_file_path,
-                "maxBytes": 5_242_880,  # 5 MB
-                "backupCount": 3,
-                "encoding": "utf-8",
-            },
         },
         "loggers": {
             "ai_researcher": {
                 "level": level,
-                "handlers": ["console", "file"],
+                "handlers": ["console"],
                 "propagate": False,
             },
         },
