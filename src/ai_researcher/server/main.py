@@ -144,6 +144,14 @@ async def stream_research(
                     msg, _metadata = payload
                     if isinstance(msg, AIMessageChunk):  # noqa: SIM102
                         if msg.content:
+                            # Skip raw structured output from the supervisor node.
+                            # The supervisor uses with_structured_output(), which emits
+                            # JSON like {"intent": "...", "chat_response": "..."} as chunks.
+                            # The clean response is emitted separately via the "values" stream.
+                            node = _metadata.get("langgraph_node", "")
+                            if node == "supervisor":
+                                continue
+
                             yield {
                                 "event": "token",
                                 "data": json.dumps(
