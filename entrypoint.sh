@@ -19,18 +19,18 @@ BACKEND_PID=$!
 # Wait for FastAPI to become healthy before starting Streamlit
 echo "⏳ Waiting for FastAPI to be ready..."
 FASTAPI_READY=false
-for i in $(seq 1 15); do
+for i in $(seq 1 30); do
   if wget --timeout=2 -q -O - http://127.0.0.1:8000/health > /dev/null 2>&1; then
     echo "✅ FastAPI is ready!"
     FASTAPI_READY=true
     break
   fi
-  echo "  Attempt $i/15 — retrying in 2s..."
+  echo "  Attempt $i/30 — retrying in 2s..."
   sleep 2
 done
 
 if [ "$FASTAPI_READY" = false ]; then
-  echo "❌ FastAPI failed to start within 30 seconds. Checking backend status..."
+  echo "❌ FastAPI failed to start within 60 seconds. Checking backend status..."
   if ! ps -p $BACKEND_PID > /dev/null; then
     echo "🚨 ERROR: FastAPI process has CRASHED. Check the logs above for Python Tracebacks."
   else

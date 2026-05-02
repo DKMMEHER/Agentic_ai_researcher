@@ -14,7 +14,21 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 warnings.filterwarnings("ignore", message=".*Accessing `__path__`.*")
 
-from ai_researcher.agent.graph import build_graph  # noqa: E402
-from ai_researcher.config import get_settings  # noqa: E402
+# NOTE: build_graph and get_settings are imported lazily (not at module level)
+# to avoid triggering heavy PyTorch/HuggingFace imports during container startup.
+# This allows FastAPI to bind its port and respond to health checks immediately.
 
 __all__ = ["__version__", "build_graph", "get_settings"]
+
+
+def __getattr__(name: str):
+    """Lazy imports for heavy modules to speed up container startup."""
+    if name == "build_graph":
+        from ai_researcher.agent.graph import build_graph
+
+        return build_graph
+    if name == "get_settings":
+        from ai_researcher.config import get_settings
+
+        return get_settings
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
