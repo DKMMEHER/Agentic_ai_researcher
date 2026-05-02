@@ -124,14 +124,15 @@ async def stream_research(
     # Auto-initialize session if it doesn't exist
     graph, config = get_session(request, thread_id)
 
-    # If a question is provided, it's a new input to the graph
+    # If a question is provided, it's a new input to the graph.
+    # NOTE: We only send the user message here. Each graph node (supervisor,
+    # researcher, writer) prepends its own system prompt before calling the LLM.
+    # Injecting a system prompt here would pollute the checkpointed message history
+    # and confuse the supervisor's intent classification.
     input_data = None
     if question:
-        from ai_researcher.agent.prompts import load_prompt
-
         input_data = {
             "messages": [
-                {"role": "system", "content": load_prompt()},
                 {"role": "user", "content": question},
             ]
         }
