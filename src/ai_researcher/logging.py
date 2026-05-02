@@ -5,8 +5,6 @@ Call `setup_logging()` once at application startup to configure all loggers.
 
 import logging
 import logging.config
-from datetime import datetime
-from pathlib import Path
 
 
 def setup_logging(level: str | None = None) -> None:
