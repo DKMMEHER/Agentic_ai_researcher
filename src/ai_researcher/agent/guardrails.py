@@ -6,8 +6,8 @@ logger = get_logger(__name__)
 
 # Maximum number of times agents are allowed to iterate (call tools)
 # before being forcefully halted.
-MAX_RESEARCHER_ITERATIONS = 4
-MAX_WRITER_ITERATIONS = 4
+MAX_RESEARCHER_ITERATIONS = 10
+MAX_WRITER_ITERATIONS = 8
 
 
 def log_iteration_limit_reached(agent_name: str, current_iterations: int) -> None:
