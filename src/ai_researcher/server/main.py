@@ -153,15 +153,27 @@ async def stream_research(
                             if node == "supervisor":
                                 continue
 
-                            yield {
-                                "event": "token",
-                                "data": json.dumps(
-                                    {
-                                        "content": str(msg.content),
-                                        "id": getattr(msg, "id", None),
-                                    }
-                                ),
-                            }
+                            # Extract text cleanly, as Gemini sometimes returns lists of dicts
+                            content_str = ""
+                            if isinstance(msg.content, str):
+                                content_str = msg.content
+                            elif isinstance(msg.content, list):
+                                for item in msg.content:
+                                    if isinstance(item, dict) and "text" in item:
+                                        content_str += item["text"]
+                                    elif isinstance(item, str):
+                                        content_str += item
+
+                            if content_str:
+                                yield {
+                                    "event": "token",
+                                    "data": json.dumps(
+                                        {
+                                            "content": content_str,
+                                            "id": getattr(msg, "id", None),
+                                        }
+                                    ),
+                                }
                 elif mode == "values":
                     v_state = payload
                     agent = v_state.get("current_agent", "supervisor")
