@@ -18,13 +18,13 @@ class TestGuardrailConstants:
     def test_writer_limit_is_positive(self):
         assert MAX_WRITER_ITERATIONS > 0
 
-    def test_researcher_limit_is_4(self):
-        """The default safety limit for the researcher is 4."""
-        assert MAX_RESEARCHER_ITERATIONS == 4
+    def test_researcher_limit_is_10(self):
+        """The safety limit for the researcher is 10."""
+        assert MAX_RESEARCHER_ITERATIONS == 10
 
-    def test_writer_limit_is_4(self):
-        """The default safety limit for the writer is 4."""
-        assert MAX_WRITER_ITERATIONS == 4
+    def test_writer_limit_is_8(self):
+        """The safety limit for the writer is 8."""
+        assert MAX_WRITER_ITERATIONS == 8
 
 
 class TestLogIterationLimitReached:
